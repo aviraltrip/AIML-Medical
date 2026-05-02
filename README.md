@@ -102,4 +102,84 @@ src/pulsepoint_ai/
 ```
 
 ---
+
+## 🌐 Developer Quick-Start (Full-Stack Integration)
+
+This engine is live at: `https://aviraltrip-pulsepoint-ai.hf.space`
+Interactive Documentation: `https://aviraltrip-pulsepoint-ai.hf.space/docs`
+
+### 1. The Triage Flow (Main Feature)
+Call this when a user submits their symptoms and vitals. It returns the severity tier and doctor reasoning.
+
+**Endpoint:** `POST /api/v1/triage/assess`
+
+```javascript
+const triageResponse = await fetch('https://aviraltrip-pulsepoint-ai.hf.space/api/v1/triage/assess', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    patient_id: "USER_123",
+    symptoms: ["fever", "cough", "shortness of breath"],
+    vitals: {
+      heart_rate: 95,
+      bp_systolic: 120,
+      bp_diastolic: 80,
+      temperature: 38.5
+    },
+    patient_profile: { age: 25, gender: "female" }
+  })
+});
+
+const result = await triageResponse.json();
+console.log(result.severity); // "MEDIUM"
+console.log(result.doctor_briefing); // Clinical reasoning for the UI
+```
+
+### 2. The Symptom Interviewer (Interactive Chat)
+Call this to get the next "smart" follow-up question during a symptom check.
+
+**Endpoint:** `POST /api/v1/triage/interview`
+
+```javascript
+const interviewResponse = await fetch('https://aviraltrip-pulsepoint-ai.hf.space/api/v1/triage/interview', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    symptoms: ["headache", "nausea"],
+    patient_profile: { age: 45, gender: "male" }
+  })
+});
+
+const data = await interviewResponse.json();
+console.log(data.question); // "Is the headache throbbing or sharp?"
+```
+
+### 3. Lab Intelligence (OCR Interpretation)
+Call this when a user uploads a medical report (pass the raw OCR text).
+
+**Endpoint:** `POST /api/v1/predict/labs`
+
+```javascript
+const labResponse = await fetch('https://aviraltrip-pulsepoint-ai.hf.space/api/v1/predict/labs', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    ocr_text: "Hemoglobin: 10.2 g/dL, WBC: 4500...",
+    age: 30,
+    gender: "female"
+  })
+});
+
+const labResult = await labResponse.json();
+// Returns an array of "flags" with abnormal values and AI explanations
+```
+
+---
+
+## 🚀 Deployment Summary
+- **Frontend**: Host on **Vercel** (Next.js).
+- **AI Brain**: Hosted on **Hugging Face Spaces** (Docker).
+- **Environment Variables**: Make sure to add `GEMINI_API_KEY` to your HF Space settings.
+
+---
 *Built with ❤️ for the KLE Technological University MED-AI Hackathon.*
