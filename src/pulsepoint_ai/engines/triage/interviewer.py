@@ -6,9 +6,11 @@ diagnically relevant follow-up question.
 from __future__ import annotations
 
 import os
+import uuid
 from typing import Any
 from pulsepoint_ai.core.config import get_models_config, get_settings
 from pulsepoint_ai.core.schemas.common import PatientProfile
+from pulsepoint_ai.core.schemas.interview import InterviewerRequest, InterviewerResponse, AnswerType
 
 class SymptomInterviewer:
     def __init__(self, device: str = "cpu") -> None:
@@ -92,3 +94,15 @@ class SymptomInterviewer:
 
 # Global instance for easy access
 interviewer = SymptomInterviewer()
+
+async def next_question(req: InterviewerRequest, llm: Any = None) -> InterviewerResponse:
+    """Generates the next clinical question and formats it as an InterviewerResponse."""
+    question_text = interviewer.generate_question(req.symptoms, req.patient_profile)
+    
+    return InterviewerResponse(
+        request_id=str(uuid.uuid4()),
+        question=question_text,
+        rationale="Based on fine-tuned clinical interview patterns.",
+        expected_answer_type=AnswerType.FREE_TEXT,
+        model_version=interviewer.cfg.get("version", "flan-t5-lora-v1")
+    )

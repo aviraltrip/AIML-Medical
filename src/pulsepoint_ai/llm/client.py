@@ -2,7 +2,11 @@ import json
 from typing import Any
 
 import litellm
-import google.generativeai as genai
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", FutureWarning)
+    import google.generativeai as genai
+
 from pulsepoint_ai.core.config import get_models_config, get_settings
 
 class LLMClient:

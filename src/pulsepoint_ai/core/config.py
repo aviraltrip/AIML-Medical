@@ -62,3 +62,8 @@ def get_symptoms() -> dict[str, Any]:
 @lru_cache(maxsize=1)
 def get_rag_sources() -> dict[str, Any]:
     return _load_yaml(get_settings().configs_dir / "rag" / "sources.yaml")
+
+
+@lru_cache(maxsize=1)
+def get_triage_rules() -> dict[str, Any]:
+    return _load_yaml(get_settings().configs_dir / "triage_rules.yaml")
