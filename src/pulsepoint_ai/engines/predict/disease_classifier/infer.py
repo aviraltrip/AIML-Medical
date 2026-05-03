@@ -29,7 +29,13 @@ class DiseaseClassifier:
         self._feature_names = json.loads(Path(self.cfg["feature_names"]).read_text())
         self._id_to_label = {v: k for k, v in self._label_map.items()}
 
-    def predict(self, symptoms: list[str]) -> dict[str, Any]:
+    def predict(
+        self, 
+        symptoms: list[str], 
+        age: int | None = None, 
+        gender: str | None = None, 
+        top_k: int | None = None
+    ) -> dict[str, Any]:
         """Predicts Top-K conditions from a list of symptoms."""
         self._load()
         
@@ -42,7 +48,7 @@ class DiseaseClassifier:
         
         # 2. Inference
         probs = self._model.predict(x)[0]
-        top_k = self.cfg.get("top_k", 5)
+        top_k = top_k or self.cfg.get("top_k", 5)
         top_indices = np.argsort(probs)[::-1][:top_k]
         
         # 3. Format results
@@ -74,3 +80,12 @@ class DiseaseClassifier:
 
 # Global instance
 disease_classifier = DiseaseClassifier()
+
+# Module-level convenience proxies so callers can do `infer.predict(...)`
+def predict(
+    symptoms: list[str], 
+    age: int | None = None, 
+    gender: str | None = None, 
+    top_k: int | None = None
+) -> dict[str, Any]:
+    return disease_classifier.predict(symptoms, age=age, gender=gender, top_k=top_k)

@@ -57,7 +57,7 @@ class LLMClient:
                 )
                 
                 content = response.text
-                return json.loads(content)
+                return self._parse_json(content)
             except Exception as e:
                 print(f"Native Gemini call failed: {e}")
                 # Fallback to LiteLLM if native fails
@@ -82,14 +82,38 @@ class LLMClient:
                 max_tokens=2048,
             )
             content = response.choices[0].message.content
-            
-            # Clean up potential markdown formatting
-            if content.startswith("```json"):
-                content = content.replace("```json", "", 1).rsplit("```", 1)[0].strip()
-            elif content.startswith("```"):
-                content = content.replace("```", "", 1).rsplit("```", 1)[0].strip()
-            
-            return json.loads(content)
+            return self._parse_json(content)
         except Exception as e:
             print(f"LiteLLM call failed: {e}")
             raise e
+
+    def _parse_json(self, raw_text: str) -> dict[str, Any]:
+        """Cleans up markdown formatting and safely parses JSON with detailed error logging."""
+        raw_text = raw_text.strip()
+        # Clean up potential markdown formatting
+        if raw_text.startswith("```json"):
+            raw_text = raw_text.replace("```json", "", 1).rsplit("```", 1)[0].strip()
+        elif raw_text.startswith("```"):
+            raw_text = raw_text.replace("```", "", 1).rsplit("```", 1)[0].strip()
+            
+        try:
+            return json.loads(raw_text)
+        except json.JSONDecodeError as e:
+            print("=== Gemini raw output that failed to parse ===")
+            print(repr(raw_text))
+            print("=== Error ===", e)
+            
+            # Simple heuristic fix for truncated JSON (often missing closing braces)
+            try:
+                fixed_text = raw_text
+                if fixed_text.count("{") > fixed_text.count("}"):
+                    fixed_text += "}"
+                if fixed_text.count("[") > fixed_text.count("]"):
+                    fixed_text += "]"
+                # Try parsing again
+                return json.loads(fixed_text)
+            except Exception:
+                pass # If it still fails, raise the original error
+                
+            raise
+

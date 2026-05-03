@@ -29,7 +29,7 @@ class TriageClassifier:
         self._model = lgb.Booster(model_file=str(model_path))
         self._feature_names = json.loads(Path(self.cfg["feature_names"]).read_text())
 
-    def predict(self, symptoms: list[str], vitals: Vitals) -> dict[str, Any]:
+    def predict(self, symptoms: list[str], vitals: Vitals, patient_profile: dict[str, Any] | None = None) -> dict[str, Any]:
         """Predicts severity tier from symptoms and vitals."""
         self._load()
         
@@ -83,3 +83,7 @@ class TriageClassifier:
 
 # Global instance
 triage_classifier = TriageClassifier()
+
+# Module-level convenience proxies so callers can do `infer.predict(...)`
+def predict(symptoms: list[str], vitals: Vitals, patient_profile: dict[str, Any] | None = None) -> dict[str, Any]:
+    return triage_classifier.predict(symptoms, vitals, patient_profile)
