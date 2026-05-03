@@ -1,3 +1,11 @@
+---
+title: PulsePoint AI
+emoji: 🏥
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
 # PulsePoint — AI Family Health Network (v3.0) 🏥
 
 [![Project Status: Active](https://img.shields.io/badge/Project%20Status-Active-brightgreen.svg)](https://github.com/aviraltrip/AIML-MedAI)
