@@ -1,0 +1,84 @@
+# Hardcoded vital-sign safety rails. LLM CANNOT override.
+# Source: WHO Emergency Triage + MOHFW + NHS pathways.
+# Validated by clinical reviewer (see docs/clinical-validation.md).
+
+version: v0.1.0
+
+# Tier rank order (higher = more severe). Used to take max across rules.
+tier_rank:
+  LOW: 0
+  MEDIUM: 1
+  HIGH: 2
+  URGENT: 3
+  EMERGENCY: 4
+
+rules:
+  - id: spo2_critical
+    metric: spo2
+    op: lt
+    value: 90
+    tier: EMERGENCY
+    message: "Oxygen saturation below 90% — call 108 immediately."
+
+  - id: spo2_low
+    metric: spo2
+    op: lt
+    value: 94
+    tier: URGENT
+    message: "Low oxygen saturation — urgent medical review."
+
+  - id: bp_hypertensive_crisis
+    metric_pair: [bp_systolic, bp_diastolic]
+    op: any_gte
+    value: [180, 120]
+    tier: URGENT
+    message: "Blood pressure in hypertensive crisis range."
+
+  - id: bp_hypotensive
+    metric: bp_systolic
+    op: lt
+    value: 90
+    tier: URGENT
+    message: "Systolic blood pressure dangerously low."
+
+  - id: blood_sugar_severe_hypo
+    metric: blood_sugar_mg_dl
+    op: lt
+    value: 50
+    tier: EMERGENCY
+    message: "Severe hypoglycemia."
+
+  - id: blood_sugar_severe_hyper
+    metric: blood_sugar_mg_dl
+    op: gte
+    value: 400
+    tier: URGENT
+    message: "Severe hyperglycemia — risk of DKA/HHS."
+
+  - id: pulse_tachy_critical
+    metric: pulse_bpm
+    op: gt
+    value: 150
+    tier: EMERGENCY
+    message: "Severe tachycardia."
+
+  - id: pulse_brady_critical
+    metric: pulse_bpm
+    op: lt
+    value: 40
+    tier: EMERGENCY
+    message: "Severe bradycardia."
+
+  - id: temp_hyperpyrexia
+    metric: temp_c
+    op: gte
+    value: 40
+    tier: URGENT
+    message: "Hyperpyrexia — urgent review."
+
+  - id: temp_hypothermia
+    metric: temp_c
+    op: lt
+    value: 35
+    tier: URGENT
+    message: "Hypothermia — urgent review."

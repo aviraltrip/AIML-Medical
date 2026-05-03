@@ -35,3 +35,10 @@ class TranslationEngine:
 
 # Global instance
 translator = TranslationEngine()
+
+
+async def translate_medical_text(text: str, target_language: str, *, llm=None) -> str:
+    """Router-facing entry point. `llm` is accepted for API compatibility but unused
+    (the Google Translate gtx proxy is sufficient and free for short medical strings).
+    """
+    return await translator.translate(text, target_lang=target_language)
