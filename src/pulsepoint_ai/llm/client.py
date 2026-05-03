@@ -36,9 +36,7 @@ class LLMClient:
                 if not model_name.startswith("models/"):
                     model_name = f"models/{model_name}"
                 
-                # Replace gemini-flash-latest with a known working identifier if needed
-                if "flash-latest" in model_name:
-                    model_name = "models/gemini-1.5-flash"
+                # Remove hardcoded override since gemini-flash-latest is supported
 
                 model = genai.GenerativeModel(model_name)
                 
