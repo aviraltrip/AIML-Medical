@@ -60,6 +60,8 @@ async def ingest_all() -> None:
     KB_DIR.mkdir(parents=True, exist_ok=True)
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
+    all_chunks: list[dict] = []
+
     # 1. Process Remote Sources
     for src in sources:
         if src["type"] not in {"pdf", "html"}:
@@ -67,11 +69,12 @@ async def ingest_all() -> None:
         print(f"Ingesting remote source: {src['id']}...")
         try:
             raw = await _fetch(src["url"])
+            text = _parse_pdf(raw) if src["type"] == "pdf" else _parse_html(raw)
         except Exception as e:
             print(f"[skip] {src['id']}: {e}")
             continue
-        text = _parse_pdf(raw) if src["type"] == "pdf" else _parse_html(raw)
         if not text:
+            print(f"[skip] {src['id']}: empty parsed text")
             continue
         for chunk in chunk_text(
             text,

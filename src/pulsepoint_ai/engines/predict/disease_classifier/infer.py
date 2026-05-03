@@ -28,7 +28,16 @@ class DiseaseClassifier:
         self._model = lgb.Booster(model_file=str(model_path))
         self._label_map = json.loads(Path(self.cfg["label_map"]).read_text())
         self._feature_names = json.loads(Path(self.cfg["feature_names"]).read_text())
-        self._id_to_label = {v: k for k, v in self._label_map.items()}
+        # Build id -> icd10 mapping. Supports two label_map formats:
+        #   {icd10: int}           -> simple
+        #   {icd10: {id, name}}    -> rich (training script produces this)
+        id_to_label: dict[int, str] = {}
+        for key, val in self._label_map.items():
+            if isinstance(val, int):
+                id_to_label[val] = key
+            elif isinstance(val, dict) and "id" in val:
+                id_to_label[int(val["id"])] = key
+        self._id_to_label = id_to_label
 
     def predict(
         self,
@@ -115,11 +124,32 @@ class DiseaseClassifier:
         ]
         return {"predictions": predictions, "model_version": "fallback_v1"}
 
+    # Built-in ICD-10 -> human name fallback. The label_map.json shipped with
+    # the trained classifier is used in preference when available.
+    _ICD10_NAME_FALLBACK = {
+        "I21.9": "Acute Myocardial Infarction",
+        "I26.9": "Pulmonary Embolism",
+        "I50.9": "Acute Heart Failure",
+        "I10": "Hypertension",
+        "J00": "Common Cold",
+        "J06.9": "Upper Respiratory Infection",
+        "J18.9": "Pneumonia",
+        "J45.909": "Asthma",
+        "K59.00": "Constipation",
+        "E11.9": "Type 2 Diabetes",
+        "R51": "Headache",
+        "R50.9": "Fever, unspecified",
+        "R69": "Unknown/Unspecified",
+    }
+
     def _get_condition_name(self, icd10: str) -> str:
-        # Placeholder for ICD-10 to Name mapping
-        # In production, this would use a full medical dictionary
-        mapping = {"I21.9": "Acute Myocardial Infarction", "J18.9": "Pneumonia"}
-        return mapping.get(icd10, f"Condition {icd10}")
+        # Prefer label_map.json values if it embeds a name (some training pipelines
+        # store {"icd10": {"id": int, "name": str}}); otherwise use the static map.
+        if isinstance(self._label_map, dict):
+            entry = self._label_map.get(icd10)
+            if isinstance(entry, dict) and entry.get("name"):
+                return str(entry["name"])
+        return self._ICD10_NAME_FALLBACK.get(icd10, icd10)
 
 # Global instance
 disease_classifier = DiseaseClassifier()

@@ -18,14 +18,23 @@ htmlcov/
 data/raw/
 data/interim/
 data/processed/
-data/kb/*.npz
-data/kb/*.jsonl
-!data/kb/.gitkeep
 data/interview_qa/*.jsonl
 !data/interview_qa/.gitkeep
+# Ship the built RAG knowledge base so the deployed retriever has data
+!data/kb/
+!data/kb/*.jsonl
+!data/kb/*.npz
 
 models/**
 !models/**/.gitkeep
+# Allow trained ML artifacts to ship to HF Spaces
+!models/interviewer_lora/
+!models/interviewer_lora/*.json
+!models/interviewer_lora/*.safetensors
+!models/interviewer_lora/*.md
+!models/disease_lgbm/
+!models/disease_lgbm/*.txt
+!models/disease_lgbm/*.json
 
 mlruns/
 .ipynb_checkpoints/

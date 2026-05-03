@@ -1,7 +1,7 @@
 embedding:
   provider: gemini
-  model: models/text-embedding-004
-  dim: 768
+  model: models/gemini-embedding-001
+  dim: 3072
 
 llm:
   primary:
