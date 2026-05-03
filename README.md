@@ -187,7 +187,7 @@ const labResult = await labResponse.json();
 ## 🚀 Deployment Summary
 - **Frontend**: Host on **Vercel** (Next.js).
 - **AI Brain**: Hosted on **Hugging Face Spaces** (Docker).
-- **Environment Variables**: Make sure to add `GEMINI_API_KEY` to your HF Space settings.
+- **Environment Variables**: Make sure to add `GEMINI_API_KEY` to your Hugging face Space settings.
 
 ---
 *Built with ❤️ for the KLE Technological University MED-AI Hackathon.*
