@@ -70,26 +70,39 @@ class LLMClient:
             return await self._complete_with_litellm(prompt)
 
     async def _complete_with_litellm(self, prompt: str) -> dict[str, Any]:
-        primary = self.config["primary"]
-        try:
-            model_name = primary['model']
-            if not model_name.startswith("models/"):
-                model_name = f"models/{model_name}"
-            
-            # litellm expects gemini/ prefix
-            litellm_model = model_name.replace("models/", "gemini/")
+        fallbacks = self.config.get("fallback_chain", [])
+        if not fallbacks:
+            # If no fallbacks, try primary model via LiteLLM as last resort
+            primary = self.config["primary"]
+            fallbacks = [{"provider": primary["provider"], "model": primary["model"]}]
 
-            response = await litellm.acompletion(
-                model=litellm_model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                max_tokens=2048,
-            )
-            content = response.choices[0].message.content
-            return self._parse_json(content)
-        except Exception as e:
-            print(f"LiteLLM call failed: {e}")
-            raise e
+        last_exception = None
+        for fallback in fallbacks:
+            try:
+                model_name = fallback['model']
+                if fallback['provider'] == 'openrouter':
+                    litellm_model = f"openrouter/{model_name}"
+                elif fallback['provider'] == 'gemini':
+                    if not model_name.startswith("models/"):
+                        model_name = f"models/{model_name}"
+                    litellm_model = model_name.replace("models/", "gemini/")
+                else:
+                    litellm_model = model_name
+
+                print(f"Trying LiteLLM fallback: {litellm_model}")
+                response = await litellm.acompletion(
+                    model=litellm_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.1,
+                    max_tokens=2048,
+                )
+                content = response.choices[0].message.content
+                return self._parse_json(content)
+            except Exception as e:
+                print(f"LiteLLM call failed for {model_name}: {e}")
+                last_exception = e
+                
+        raise last_exception
 
     def _parse_json(self, raw_text: str) -> dict[str, Any]:
         """Cleans up markdown formatting and safely parses JSON with detailed error logging."""

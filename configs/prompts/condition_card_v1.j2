@@ -5,6 +5,7 @@ Strict rules:
 - Reading level: Grade 6.
 - Zero medical jargon — translate every term.
 - Three concrete action steps the patient can take.
+- NEVER use newline characters (\n) inside JSON string values. Keep all text within a single string on one line.
 - Cite ONLY the provided sources. If the answer isn't supported by them, return `unsupported: true`.
 
 Condition: {{ condition.name }} (ICD-10: {{ condition.icd10 }})
