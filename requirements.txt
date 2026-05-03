@@ -18,3 +18,11 @@ tiktoken>=0.8
 pytesseract>=0.3.13
 pillow>=11.0
 trafilatura>=1.12
+
+# Inference for fine-tuned interviewer LoRA (FLAN-T5-small + PEFT)
+torch>=2.5
+transformers>=4.46
+peft>=0.13
+sentencepiece>=0.2
+accelerate>=1.1
+safetensors>=0.4

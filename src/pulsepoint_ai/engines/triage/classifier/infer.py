@@ -10,80 +10,162 @@ import numpy as np
 from pulsepoint_ai.core.config import get_models_config
 from pulsepoint_ai.core.schemas.common import SeverityTier, Vitals
 
+
+# Canonical 5-tier ordering used during training (low -> emergency).
+# If your label_map.json uses different names/order, kb_loader logic below
+# will pick it up and override this default.
+_DEFAULT_TIER_ORDER = [
+    SeverityTier.LOW,
+    SeverityTier.MEDIUM,
+    SeverityTier.HIGH,
+    SeverityTier.URGENT,
+    SeverityTier.EMERGENCY,
+]
+
+# Map vitals attribute name -> feature_names entry the model might use.
+# Supports both modern and legacy training feature names.
+_VITAL_FEATURE_ALIASES = {
+    "pulse_bpm": ("pulse_bpm", "heart_rate", "hr"),
+    "bp_systolic": ("bp_systolic", "sbp", "systolic_bp"),
+    "bp_diastolic": ("bp_diastolic", "dbp", "diastolic_bp"),
+    "spo2": ("spo2", "oxygen_saturation"),
+    "temp_c": ("temp_c", "temperature_c", "temperature"),
+    "respiratory_rate": ("respiratory_rate", "rr", "resp_rate"),
+    "blood_sugar_mg_dl": ("blood_sugar_mg_dl", "glucose", "blood_glucose"),
+}
+
+
 class TriageClassifier:
     def __init__(self) -> None:
         self.cfg = get_models_config()["triage_classifier"]
         self._model = None
-        self._feature_names = None
+        self._feature_names: list[str] | None = None
+        self._tiers: list[SeverityTier] = _DEFAULT_TIER_ORDER
 
     def _load(self):
         if self._model:
             return
-        
+
         model_path = Path(self.cfg["artifact"])
         if not model_path.exists():
-            # For hackathon demo, we handle the case where the model hasn't been trained yet
             print(f"Warning: Triage model not found at {model_path}. Using fallback logic.")
             return
 
-        self._model = lgb.Booster(model_file=str(model_path))
-        self._feature_names = json.loads(Path(self.cfg["feature_names"]).read_text())
+        try:
+            self._model = lgb.Booster(model_file=str(model_path))
+            feat_path = Path(self.cfg["feature_names"])
+            if feat_path.exists():
+                self._feature_names = json.loads(feat_path.read_text())
 
-    def predict(self, symptoms: list[str], vitals: Vitals, patient_profile: dict[str, Any] | None = None) -> dict[str, Any]:
+            # Optional label_map.json -> tier ordering
+            label_map_path = Path(self.cfg.get("label_map", "")) if self.cfg.get("label_map") else None
+            if label_map_path and label_map_path.exists():
+                label_map = json.loads(label_map_path.read_text())
+                # label_map: {"LOW": 0, "MEDIUM": 1, ...}
+                ordered = sorted(label_map.items(), key=lambda kv: kv[1])
+                resolved = []
+                for name, _ in ordered:
+                    try:
+                        resolved.append(SeverityTier(name.upper()))
+                    except ValueError:
+                        resolved.append(SeverityTier.MEDIUM)
+                if resolved:
+                    self._tiers = resolved
+        except Exception as e:
+            print(f"Warning: Failed to load triage model ({e}). Using fallback logic.")
+            self._model = None
+
+    def predict(
+        self,
+        symptoms: list[str],
+        vitals: Vitals,
+        patient_profile: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Predicts severity tier from symptoms and vitals."""
         self._load()
-        
-        if not self._model:
+
+        if not self._model or not self._feature_names:
             return self._fallback_prediction(symptoms)
 
-        # 1. Feature Engineering
+        # 1. Feature engineering with None-safe writes
         x = np.zeros((1, len(self._feature_names)), dtype=np.float32)
-        # Add symptoms
+
+        # Symptoms (one-hot, supports both raw and snake-cased names)
         for s in symptoms:
-            if s in self._feature_names:
-                x[0, self._feature_names.index(s)] = 1.0
-        # Add vitals
-        if "heart_rate" in self._feature_names:
-            x[0, self._feature_names.index("heart_rate")] = vitals.heart_rate
-        if "bp_systolic" in self._feature_names:
-            x[0, self._feature_names.index("bp_systolic")] = vitals.bp_systolic
-        
+            for variant in (s, s.lower(), s.lower().replace(" ", "_")):
+                if variant in self._feature_names:
+                    x[0, self._feature_names.index(variant)] = 1.0
+                    break
+
+        # Vitals (skip Nones, support legacy feature names)
+        for vitals_attr, aliases in _VITAL_FEATURE_ALIASES.items():
+            value = getattr(vitals, vitals_attr, None)
+            if value is None:
+                continue
+            for alias in aliases:
+                if alias in self._feature_names:
+                    x[0, self._feature_names.index(alias)] = float(value)
+                    break
+
         # 2. Inference
-        probs = self._model.predict(x)[0]
-        tier_idx = np.argmax(probs)
-        
-        # Mapping (Depends on how you labeled your training data)
-        tiers = [SeverityTier.LOW, SeverityTier.MEDIUM, SeverityTier.HIGH, SeverityTier.CRITICAL]
+        try:
+            probs = self._model.predict(x)[0]
+        except Exception as e:
+            print(f"Triage inference failed ({e}). Falling back.")
+            return self._fallback_prediction(symptoms)
+
+        probs = np.atleast_1d(np.asarray(probs, dtype=np.float64))
+
+        # Align tier list length to model output
+        tiers = self._tiers[: len(probs)] or _DEFAULT_TIER_ORDER[: len(probs)]
+        if len(tiers) < len(probs):
+            tiers = list(tiers) + _DEFAULT_TIER_ORDER[len(tiers) : len(probs)]
+
+        tier_idx = int(np.argmax(probs))
         predicted_tier = tiers[tier_idx]
-        
+
         return {
             "tier": predicted_tier,
             "probs": {t.value: float(probs[i]) for i, t in enumerate(tiers)},
             "feature_importance": self._get_top_features(x),
-            "model_version": self.cfg.get("version", "v0.1.0")
+            "model_version": self.cfg.get("version", "v0.1.0"),
         }
 
-    def _get_top_features(self, x: np.ndarray) -> list[str]:
-        if not self._model: return []
+    def _get_top_features(self, x: np.ndarray) -> list[dict[str, Any]]:
+        """Return list of {feature, shap} matching the FeatureImportance schema."""
+        if not self._model or not self._feature_names:
+            return []
         importance = self._model.feature_importance(importance_type="gain")
         top_idx = np.argsort(importance)[::-1][:5]
-        return [self._feature_names[i] for i in top_idx if x[0, i] > 0]
+        return [
+            {"feature": self._feature_names[i], "shap": float(importance[i])}
+            for i in top_idx
+            if x[0, i] > 0
+        ]
 
     def _fallback_prediction(self, symptoms: list[str]) -> dict[str, Any]:
         """Rule-based fallback if the ML model isn't trained yet."""
+        normalized = {s.lower().replace(" ", "_") for s in symptoms}
         severity = SeverityTier.LOW
-        if any(s in ["chest_pain", "shortness_of_breath"] for s in symptoms):
+        if normalized & {"chest_pain", "shortness_of_breath", "stroke_symptoms", "unconscious"}:
             severity = SeverityTier.HIGH
+        elif normalized & {"high_fever", "severe_headache", "vomiting_blood"}:
+            severity = SeverityTier.MEDIUM
         return {
             "tier": severity,
-            "probs": {t.value: 0.25 for t in SeverityTier},
-            "feature_importance": ["chest_pain"] if severity == SeverityTier.HIGH else [],
-            "model_version": "fallback_v1"
+            "probs": {t.value: 0.2 for t in SeverityTier},
+            "feature_importance": [],
+            "model_version": "fallback_v1",
         }
+
 
 # Global instance
 triage_classifier = TriageClassifier()
 
-# Module-level convenience proxies so callers can do `infer.predict(...)`
-def predict(symptoms: list[str], vitals: Vitals, patient_profile: dict[str, Any] | None = None) -> dict[str, Any]:
+
+def predict(
+    symptoms: list[str],
+    vitals: Vitals,
+    patient_profile: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     return triage_classifier.predict(symptoms, vitals, patient_profile)
