@@ -39,6 +39,11 @@ Seamlessly connecting AI insights to human clinical workflows.
 - **MedReach AI:** Automated, asynchronous summarization of patient-AI interactions for doctor review.
 - **Smart Referrals:** Generation of doctor-ready PDF referral cards with structured clinical briefings.
 - **Language Bridge:** Real-time translation of medical summaries into local languages to ensure healthcare accessibility.
+- **HyperLocal Care Matching:** AI-ranked nearby doctor recommendations driven directly by upstream pipeline outputs (ICD-10 codes from the Predict Engine + severity tier from the Triage Engine). Four-stage chain:
+  - **Multi-label Specialty Mapper** — longest-prefix ICD-10 → specialty classifier with deterministic generalist fallback (e.g., `I21.9` → Cardiologist, `J45.909` + `E11.9` → Pulmonologist + Endocrinologist).
+  - **Haversine Geo Filter** — great-circle distance treated as a continuous feature, not a hard cutoff (same pattern Swiggy/Uber use).
+  - **Weighted Relevance Scorer** — learning-to-rank style linear combination: `0.4·specialty_match + 0.3·proximity + 0.2·availability + 0.1·rating`. Every weight is in YAML, not Python.
+  - **Urgency-Conditioned Sort** — EMERGENCY/URGENT cases force same-day-only filtering and sort by raw distance; routine cases sort by score. The triage engine's output literally changes ranking behavior at runtime.
 
 ---
 
@@ -102,7 +107,7 @@ src/pulsepoint_ai/
 ├── engines/          # The 3-Engine Core
 │   ├── triage/       # Pipeline, classifier, RAG reasoner
 │   ├── predict/      # Disease classification, labs, trends
-│   └── connect/      # Summarization, referral, translation
+│   └── connect/      # Summarization, referral, translation, care_locator
 ├── input_layer/      # OCR (Tesseract) and STT (Whisper/AssemblyAI)
 ├── interview/        # Llama 3.1 LoRA training & inference logic
 ├── llm/              # Standardized LLM client (LiteLLM)
@@ -181,6 +186,40 @@ const labResponse = await fetch('https://aviraltrip-pulsepoint-ai.hf.space/api/v
 const labResult = await labResponse.json();
 // Returns an array of "flags" with abnormal values and AI explanations
 ```
+
+### 4. HyperLocal Care Matching (Doctor Recommendations)
+Call this **after** `/triage/assess` and `/predict/disease` — feed the ICD-10 codes and severity tier from those responses, plus the patient's coordinates from `navigator.geolocation`. Returns a ranked list of nearby doctors with everything needed to render map markers and contact cards.
+
+**Endpoint:** `POST /api/v1/connect/care-locator`
+
+```javascript
+// triageResult and diseaseResult come from the prior two calls.
+const careResponse = await fetch('https://aviraltrip-pulsepoint-ai.hf.space/api/v1/connect/care-locator', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    icd10_codes: diseaseResult.predictions.map(p => p.icd10),  // from /predict/disease
+    severity_tier: triageResult.severity,                       // from /triage/assess
+    patient_lat: 15.3650,                                       // navigator.geolocation
+    patient_lon: 75.1240,
+    radius_km: 25                                               // optional UI slider
+  })
+});
+
+const { doctors, required_specialties, sort_policy } = await careResponse.json();
+// doctors[0] = { name, specialty, clinic, phone, lat, lon, distance_km, score,
+//                available_today, rating, languages, fee_inr, score_breakdown }
+// Drop lat/lon straight into a Mapbox or Google Maps component.
+```
+
+**Why this is AI/ML, not just a geo filter:**
+- *Multi-label classification* — multiple ICD-10 codes resolve to multiple specialties simultaneously.
+- *Learning-to-rank* — weighted feature vector across specialty match, proximity, availability, and rating.
+- *Context-aware inference* — the upstream severity tier reshapes the ranking logic at runtime (EMERGENCY ⇒ same-day filter + distance sort).
+- *Geospatial features* — haversine distance fed into the scorer as a continuous feature.
+- *Deterministic fallback* — same architectural pattern as the rest of PulsePoint: rules catch what the model misses.
+
+All ranking behavior lives in [configs/care_locator.yaml](configs/care_locator.yaml); the (mock) doctor catalog is [data/doctors.json](data/doctors.json) — swap for a Postgres query without touching the API.
 
 ---
 
