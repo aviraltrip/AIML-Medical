@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Any, Dict, List
-from pulsepoint_ai.engines.connect import medreach, translation
+from pulsepoint_ai.engines.connect import care_locator, medreach, translation
+from pulsepoint_ai.core.schemas.care import CareLocatorRequest, CareLocatorResponse
 from pulsepoint_ai.llm.client import LLMClient
 import uuid
 
@@ -41,8 +42,8 @@ async def translate_text(request: TranslationRequest):
     """
     try:
         translated = await translation.translate_medical_text(
-            request.text, 
-            request.target_language, 
+            request.text,
+            request.target_language,
             llm=llm_client
         )
         return {
@@ -50,5 +51,26 @@ async def translate_text(request: TranslationRequest):
             "translated_text": translated,
             "target_language": request.target_language
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/care-locator", response_model=CareLocatorResponse)
+async def find_nearby_care(request: CareLocatorRequest):
+    """
+    HyperLocal Care Matching.
+
+    Takes ICD-10 codes from /api/v1/predict/disease and the severity tier
+    from /api/v1/triage/assess plus the patient's coordinates, and returns
+    a ranked list of nearby doctors.
+
+    Pipeline:
+      1. Multi-label ICD-10 -> specialty mapper (config-driven, longest-prefix).
+      2. Haversine geo filter using patient_lat/patient_lon and radius_km.
+      3. Weighted relevance scorer (specialty / proximity / availability / rating).
+      4. Urgency-conditioned sort (EMERGENCY/URGENT -> distance + same-day only).
+    """
+    try:
+        return care_locator.find_care(request)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
