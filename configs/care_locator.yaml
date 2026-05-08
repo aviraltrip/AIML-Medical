@@ -100,27 +100,35 @@ availability:
   routine_miss: 0.7
 
 # Urgency-conditioned sort policy.
-#  - sort_by: "distance" -> ascending distance_km (closest first)
-#  - sort_by: "score"    -> descending score (best match first)
+#  - sort_by: "distance" -> tier-aware ascending distance_km (specialty-match first, then closest)
+#  - sort_by: "score"    -> tier-aware descending score (best match first)
+#  - drop_irrelevant_specialty -> when true and at least one qualified match exists,
+#    suppress doctors whose specialty is unrelated to the diagnosis (e.g., hide an
+#    orthopedist from heart-attack results when a cardiologist or GP is reachable).
 # require_same_day filters out doctors not available today before scoring.
 urgency_policy:
   EMERGENCY:
     sort_by: distance
     require_same_day: true
+    drop_irrelevant_specialty: true
     max_results: 5
   URGENT:
     sort_by: distance
     require_same_day: true
+    drop_irrelevant_specialty: true
     max_results: 5
   HIGH:
     sort_by: score
     require_same_day: false
+    drop_irrelevant_specialty: false
     max_results: 5
   MEDIUM:
     sort_by: score
     require_same_day: false
+    drop_irrelevant_specialty: false
     max_results: 5
   LOW:
     sort_by: score
     require_same_day: false
+    drop_irrelevant_specialty: false
     max_results: 5

@@ -29,7 +29,7 @@ async def assess_triage(request: TriageAssessRequest):
 async def conduct_interview(request: InterviewerRequest):
     """
     Generate the next clinical question based on the patient's symptoms and previous answers.
-    Uses a fine-tuned Llama 3.1 model.
+    Primary: Gemini via LLMClient. Fallbacks: FLAN-T5 LoRA adapter, then deterministic rules.
     """
     try:
         response = await next_question(request, llm=llm_client)

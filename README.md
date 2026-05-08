@@ -12,7 +12,7 @@ pinned: false
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-blue.svg)](LICENSE)
 [![Built for: MED-AI Hackathon 2025](https://img.shields.io/badge/Hackathon-MED--AI%202025-orange.svg)](https://kletech.ac.in)
 
-**PulsePoint** is a state-of-the-art AI/ML medical engine designed to provide reliable, safety-first health triage and diagnostics. Built for the **MED-AI Hackathon 2025**, it bridges the gap between raw medical data and actionable clinical insights using a multi-engine architecture grounded in deterministic medical rules and advanced Large Language Models (LLMs).
+**PulsePoint** is a state-of-the-art AI/ML medical engine designed to provide reliable, safety-first health triage and diagnostics. Built for the **MED-AI Hackathon 2026**, it bridges the gap between raw medical data and actionable clinical insights using a multi-engine architecture grounded in deterministic medical rules and advanced Large Language Models (LLMs).
 
 ---
 

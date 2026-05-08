@@ -43,6 +43,12 @@ class DoctorMatch(BaseModel):
 
     distance_km: float = Field(..., ge=0)
     score: float = Field(..., ge=0, le=1)
+    relevance_tier: int = Field(
+        ...,
+        ge=0,
+        le=2,
+        description="2 = exact specialty match, 1 = generalist fallback, 0 = unrelated specialty.",
+    )
     score_breakdown: dict[str, float] = Field(
         default_factory=dict,
         description="Per-feature contributions (specialty_match, proximity, availability, rating).",

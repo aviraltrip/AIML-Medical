@@ -74,12 +74,26 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 # ---------- 3. Per-feature scoring -------------------------------------------
+def _relevance_tier(doctor_specialty: str, required: list[str], cfg: dict[str, Any]) -> int:
+    """2 = exact match, 1 = generalist fallback, 0 = unrelated specialty.
+
+    This tier is the primary sort key for urgency-driven distance sorts so that
+    a closer-but-irrelevant specialist (e.g., orthopedist for an MI) never
+    outranks a slightly farther cardiologist.
+    """
+    if doctor_specialty in required:
+        return 2
+    if doctor_specialty == cfg.get("default_specialty"):
+        return 1
+    return 0
+
+
 def _specialty_match_score(doctor_specialty: str, required: list[str], cfg: dict[str, Any]) -> float:
     sm = cfg["specialty_match"]
-    if doctor_specialty in required:
+    tier = _relevance_tier(doctor_specialty, required, cfg)
+    if tier == 2:
         return float(sm["exact"])
-    if doctor_specialty == cfg.get("default_specialty"):
-        # Generalist treated as a partial match for any required specialty.
+    if tier == 1:
         return float(sm.get("generalist_partial", sm["partial"]))
     return float(sm["partial"])
 
@@ -147,6 +161,7 @@ def find_care(req: CareLocatorRequest) -> CareLocatorResponse:
     sort_by = policy.get("sort_by", "score")
     requires_same_day = bool(policy.get("require_same_day", False))
     max_results = int(req.max_results or policy.get("max_results", 5))
+    drop_irrelevant = bool(policy.get("drop_irrelevant_specialty", False))
 
     required_specialties = map_icd10_to_specialties(req.icd10_codes)
 
@@ -159,6 +174,7 @@ def find_care(req: CareLocatorRequest) -> CareLocatorResponse:
         if distance > radius_km:
             continue
 
+        tier = _relevance_tier(doc["specialty"], required_specialties, cfg)
         score, breakdown = _score_doctor(
             doc,
             required_specialties=required_specialties,
@@ -183,14 +199,21 @@ def find_care(req: CareLocatorRequest) -> CareLocatorResponse:
                 fee_inr=doc.get("fee_inr"),
                 distance_km=round(distance, 2),
                 score=round(score, 3),
+                relevance_tier=tier,
                 score_breakdown=breakdown,
             )
         )
 
+    if drop_irrelevant and any(m.relevance_tier > 0 for m in matches):
+        # Only suppress unrelated specialists when at least one qualified match exists.
+        matches = [m for m in matches if m.relevance_tier > 0]
+
     if sort_by == "distance":
-        matches.sort(key=lambda m: (m.distance_km, -m.score))
+        # Specialty-first, then nearest. Prevents an unrelated specialist from
+        # outranking a slightly farther cardiologist on an MI emergency.
+        matches.sort(key=lambda m: (-m.relevance_tier, m.distance_km, -m.score))
     else:
-        matches.sort(key=lambda m: (-m.score, m.distance_km))
+        matches.sort(key=lambda m: (-m.relevance_tier, -m.score, m.distance_km))
 
     return CareLocatorResponse(
         request_id=str(uuid.uuid4()),
