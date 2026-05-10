@@ -1,0 +1,31 @@
+{
+  "n_samples": 5000,
+  "n_features": 145,
+  "n_classes": 5,
+  "train_accuracy": 1.0,
+  "val_accuracy": 0.999,
+  "best_iteration": 200,
+  "per_tier_accuracy": {
+    "LOW": {
+      "accuracy": 1.0,
+      "n_samples": 189
+    },
+    "MEDIUM": {
+      "accuracy": 1.0,
+      "n_samples": 191
+    },
+    "HIGH": {
+      "accuracy": 0.9953051643192489,
+      "n_samples": 213
+    },
+    "URGENT": {
+      "accuracy": 1.0,
+      "n_samples": 204
+    },
+    "EMERGENCY": {
+      "accuracy": 1.0,
+      "n_samples": 203
+    }
+  },
+  "seed": 42
+}

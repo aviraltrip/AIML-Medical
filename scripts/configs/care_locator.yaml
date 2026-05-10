@@ -1,0 +1,134 @@
+# HyperLocal Care Matching configuration.
+# Drives the multi-label ICD-10 -> specialty mapper, scoring weights, and
+# urgency-conditioned sort policy. Same philosophy as triage_rules.yaml:
+# the LLM/ML layer cannot override these. Editing this YAML reshapes
+# the ranking without touching Python.
+
+version: v0.1.0
+
+# Default search radius (km) when the request does not override it.
+default_radius_km: 50
+
+# ICD-10 prefix -> medical specialty. Longest matching prefix wins so that
+# "I21" (acute MI) routes to Cardiologist instead of falling back to a
+# generic "I" rule. List entries are evaluated in declaration order only
+# as a tiebreaker; specificity (prefix length) is the primary key.
+specialty_mapping:
+  # Cardiovascular
+  - prefix: "I21"
+    specialty: Cardiologist
+  - prefix: "I26"
+    specialty: Cardiologist
+  - prefix: "I50"
+    specialty: Cardiologist
+  - prefix: "I10"
+    specialty: Cardiologist
+  - prefix: "I11"
+    specialty: Cardiologist
+  - prefix: "I"
+    specialty: Cardiologist
+
+  # Respiratory
+  - prefix: "J45"
+    specialty: Pulmonologist
+  - prefix: "J18"
+    specialty: Pulmonologist
+  - prefix: "J06"
+    specialty: General Physician
+  - prefix: "J00"
+    specialty: General Physician
+  - prefix: "J"
+    specialty: Pulmonologist
+
+  # Endocrine / metabolic
+  - prefix: "E11"
+    specialty: Endocrinologist
+  - prefix: "E10"
+    specialty: Endocrinologist
+  - prefix: "E"
+    specialty: Endocrinologist
+
+  # Digestive
+  - prefix: "K59"
+    specialty: Gastroenterologist
+  - prefix: "K"
+    specialty: Gastroenterologist
+
+  # Renal / genitourinary
+  - prefix: "N"
+    specialty: Nephrologist
+
+  # Neurological / symptoms
+  - prefix: "R51"
+    specialty: Neurologist
+  - prefix: "R50"
+    specialty: General Physician
+  - prefix: "R"
+    specialty: General Physician
+
+  # Mental health
+  - prefix: "F"
+    specialty: Psychiatrist
+
+# Fallback specialty when no prefix matches. Always at least one option.
+default_specialty: General Physician
+
+# Doctor relevance score weights. Must sum to 1.0 so the score stays in [0,1].
+# Tuning these here changes ranking behavior without redeploying code.
+scoring_weights:
+  specialty_match: 0.40
+  proximity: 0.30
+  availability: 0.20
+  rating: 0.10
+
+# Specialty match feature values. Exact match for any required specialty
+# scores 1.0; everything else (including a generalist when a specialist
+# is needed) gets the partial-match floor.
+specialty_match:
+  exact: 1.0
+  partial: 0.3
+  # Allow the General Physician to act as a partial fallback when the
+  # required specialty is missing in the catalog (avoids zeroing out
+  # results in low-coverage areas).
+  generalist_partial: 0.5
+
+# Availability signal. EMERGENCY/URGENT cases require same-day availability.
+availability:
+  same_day_match: 1.0
+  same_day_miss: 0.0
+  routine_match: 1.0
+  routine_miss: 0.7
+
+# Urgency-conditioned sort policy.
+#  - sort_by: "distance" -> tier-aware ascending distance_km (specialty-match first, then closest)
+#  - sort_by: "score"    -> tier-aware descending score (best match first)
+#  - drop_irrelevant_specialty -> when true and at least one qualified match exists,
+#    suppress doctors whose specialty is unrelated to the diagnosis (e.g., hide an
+#    orthopedist from heart-attack results when a cardiologist or GP is reachable).
+# require_same_day filters out doctors not available today before scoring.
+urgency_policy:
+  EMERGENCY:
+    sort_by: distance
+    require_same_day: true
+    drop_irrelevant_specialty: true
+    max_results: 5
+  URGENT:
+    sort_by: distance
+    require_same_day: true
+    drop_irrelevant_specialty: true
+    max_results: 5
+  HIGH:
+    sort_by: score
+    require_same_day: false
+    drop_irrelevant_specialty: false
+    max_results: 5
+  MEDIUM:
+    sort_by: score
+    require_same_day: false
+    drop_irrelevant_specialty: false
+    max_results: 5
+  LOW:
+    sort_by: score
+    require_same_day: false
+    drop_irrelevant_specialty: false
+    max_results: 5

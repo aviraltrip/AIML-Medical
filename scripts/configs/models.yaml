@@ -1,0 +1,57 @@
+embedding:
+  provider: gemini
+  model: models/gemini-embedding-001
+  dim: 3072
+
+llm:
+  primary:
+    provider: gemini
+    model: gemini-flash-latest
+    temperature: 0.2
+    max_output_tokens: 1024
+  fallback_chain:
+    - provider: gemini
+      model: gemini-2.5-flash
+    - provider: gemini
+      model: gemini-2.0-flash
+    - provider: gemini
+      model: gemini-flash-lite-latest
+    - provider: openrouter
+      model: meta-llama/llama-3.3-70b-instruct:free
+    - provider: openrouter
+      model: google/gemma-2-9b-it:free
+    - provider: openrouter
+      model: mistralai/mistral-7b-instruct:free
+
+triage_classifier:
+  framework: lightgbm
+  artifact: models/triage_lgbm/model.txt
+  feature_names: models/triage_lgbm/feature_names.json
+  label_map: models/triage_lgbm/label_map.json
+  version: v0.1.0
+
+disease_classifier:
+  framework: lightgbm
+  artifact: models/disease_lgbm/model.txt
+  feature_names: models/disease_lgbm/feature_names.json
+  label_map: models/disease_lgbm/label_map.json
+  top_k: 5
+  version: v0.1.0
+
+interviewer:
+  base_model: google/flan-t5-small
+  adapter: models/interviewer_lora
+  adapter_hub: pulsepoint/interviewer-lora
+  load_in_4bit: false
+  max_new_tokens: 64
+  version: v1.0.0
+
+stt:
+  online:
+    provider: assemblyai
+    model: universal-3-pro
+  offline:
+    runtime: browser-only
+
+translation:
+  provider: google_translate_gtx

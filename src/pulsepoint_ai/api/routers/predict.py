@@ -1,13 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from pulsepoint_ai.core.schemas.predict import (
-    DiseasePredictRequest, 
+    DiseasePredictRequest,
     DiseasePredictResponse,
     ConditionCardRequest,
-    ConditionCardResponse
+    ConditionCardResponse,
+    SymptomExtractionRequest,
+    SymptomExtractionResponse,
 )
 from pulsepoint_ai.core.schemas.lab import LabAnalyzeRequest, LabAnalyzeResponse
 from pulsepoint_ai.engines.predict.disease_classifier import infer as disease_infer
-from pulsepoint_ai.engines.predict import condition_cards, lab_detector, lab_explainer
+from pulsepoint_ai.engines.predict import condition_cards, lab_detector, lab_explainer, symptom_extractor
 from pulsepoint_ai.llm.client import LLMClient
 import uuid
 
@@ -73,5 +75,28 @@ async def get_condition_card(request: ConditionCardRequest):
     try:
         response = await condition_cards.get_card(request, llm=llm_client)
         return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/symptoms-from-text", response_model=SymptomExtractionResponse)
+async def extract_symptoms_from_text(request: SymptomExtractionRequest):
+    """
+    Extract canonical symptom names from PDF/OCR/clinical-note text.
+
+    Negation-aware: phrases inside negation scopes ("no history of X",
+    "denies Y", "absent Z", etc.) are reported separately under "negated"
+    and are NOT included in the positive "symptoms" list. This prevents
+    naive substring matchers from emitting "blood cough" as a symptom when
+    the source says "no history of blood cough".
+    """
+    try:
+        result = symptom_extractor.extract_symptoms(request.text)
+        return SymptomExtractionResponse(
+            request_id=str(uuid.uuid4()),
+            symptoms=result["symptoms"],
+            negated=result["negated"],
+            matches=result["matches"],
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

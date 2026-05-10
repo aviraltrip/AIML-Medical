@@ -44,3 +44,36 @@ class ConditionCardResponse(BaseModel):
     action_steps: list[str]
     sources: list[Source]
     unsupported: bool = False
+
+
+class SymptomExtractionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(
+        ...,
+        min_length=1,
+        description="Free-text from PDF/OCR/clinical notes to extract canonical symptoms from.",
+    )
+
+
+class SymptomMatchOut(BaseModel):
+    canonical: str
+    phrase: str
+    negated: bool
+    sentence: str
+
+
+class SymptomExtractionResponse(BaseModel):
+    request_id: str
+    symptoms: list[str] = Field(
+        ...,
+        description="Canonical symptom names that are positively asserted in the text.",
+    )
+    negated: list[str] = Field(
+        default_factory=list,
+        description="Canonical symptoms that were detected but inside a negation scope (e.g. 'no history of X').",
+    )
+    matches: list[SymptomMatchOut] = Field(
+        default_factory=list,
+        description="Per-occurrence audit trail showing the matched phrase, its sentence, and whether it was negated.",
+    )

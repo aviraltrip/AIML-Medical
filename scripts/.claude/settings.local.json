@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git config *)",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" https://aviraltrip-pulsepoint-ai.hf.space/)",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" -X POST https://aviraltrip-pulsepoint-ai.hf.space/api/v1/triage/assess -H \"Content-Type: application/json\" -d '{\"symptoms\":[\"chest pain\",\"shortness of breath\"],\"vitals\":{\"hr\":110,\"sbp\":90,\"spo2\":92,\"temp_c\":37.2,\"rr\":24},\"patient_profile\":{\"age\":58,\"sex\":\"male\"}}')",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" -X POST https://aviraltrip-pulsepoint-ai.hf.space/api/v1/triage/assess -H \"Content-Type: application/json\" -d '{\"patient_id\":\"test-001\",\"symptoms\":[\"chest pain\",\"shortness of breath\"],\"vitals\":{\"pulse_bpm\":110,\"bp_systolic\":90,\"spo2\":92,\"temp_c\":37.2,\"respiratory_rate\":24},\"patient_profile\":{\"age\":58,\"gender\":\"male\"}}')",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" -X POST https://aviraltrip-pulsepoint-ai.hf.space/api/v1/triage/interview -H \"Content-Type: application/json\" -d '{\"symptoms\":[\"fever\",\"cough\"],\"answered\":[],\"patient_profile\":{\"age\":30,\"gender\":\"female\"}}')",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" -X POST https://aviraltrip-pulsepoint-ai.hf.space/api/v1/predict/disease -H \"Content-Type: application/json\" -d '{\"symptoms\":[\"fever\",\"sore throat\",\"headache\"],\"age\":25,\"gender\":\"female\",\"top_k\":5}')",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" -X POST https://aviraltrip-pulsepoint-ai.hf.space/api/v1/predict/labs -H \"Content-Type: application/json\" -d '{\"ocr_text\":\"Hemoglobin 9.2 g/dL\\\\nWBC 13500 /uL\\\\nGlucose 180 mg/dL\\\\nCreatinine 1.4 mg/dL\",\"age\":45,\"gender\":\"male\"}')",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" -X POST https://aviraltrip-pulsepoint-ai.hf.space/api/v1/predict/condition-card -H \"Content-Type: application/json\" -d '{\"icd10\":\"J45.909\",\"name\":\"Asthma\",\"language\":\"en\",\"reading_level\":\"grade6\"}')",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" -X POST https://aviraltrip-pulsepoint-ai.hf.space/api/v1/connect/summarize -H \"Content-Type: application/json\" -d '{\"patient_data\":{\"age\":58,\"gender\":\"male\",\"chief_complaint\":\"chest pain\"},\"triage_history\":[{\"severity\":\"HIGH\",\"symptoms\":[\"chest pain\",\"shortness of breath\"]}]}')",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" -X POST https://aviraltrip-pulsepoint-ai.hf.space/api/v1/connect/translate -H \"Content-Type: application/json\" -d '{\"text\":\"Take this medication twice daily after meals.\",\"target_language\":\"hi\"}')",
+      "Bash(python -c \"from pulsepoint_ai.engines.predict.disease_classifier import infer; r = infer.predict\\(['fever','sore throat','cough'], age=25, gender='female', top_k=5\\); print\\('predict/disease OK:', r['model_version'], '->', [p['icd10'] for p in r['predictions']]\\)\")",
+      "Bash(PYTHONPATH=src python -c \"from pulsepoint_ai.engines.predict.disease_classifier import infer; r = infer.predict\\(['fever','sore throat','cough'], age=25, gender='female', top_k=5\\); print\\('predict/disease OK:', r['model_version'], '->', [\\(p['icd10'], p['prob']\\) for p in r['predictions']]\\)\")",
+      "Bash(git add *)",
+      "Bash(python -m py_compile src/pulsepoint_ai/engines/triage/classifier/infer.py src/pulsepoint_ai/engines/triage/interviewer.py src/pulsepoint_ai/engines/predict/disease_classifier/infer.py src/pulsepoint_ai/engines/predict/condition_cards.py src/pulsepoint_ai/engines/connect/medreach.py src/pulsepoint_ai/engines/connect/translation.py)",
+      "Bash(python -c \"import torch, transformers, peft; print\\('torch:', torch.__version__\\); print\\('transformers:', transformers.__version__\\); print\\('peft:', peft.__version__\\)\")"
+    ]
+  }
+}

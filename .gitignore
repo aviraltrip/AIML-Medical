@@ -35,6 +35,9 @@ models/**
 !models/disease_lgbm/
 !models/disease_lgbm/*.txt
 !models/disease_lgbm/*.json
+!models/triage_lgbm/
+!models/triage_lgbm/*.txt
+!models/triage_lgbm/*.json
 
 mlruns/
 .ipynb_checkpoints/
