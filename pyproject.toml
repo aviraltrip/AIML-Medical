@@ -58,11 +58,6 @@ train = [
     "mlflow>=2.17",
 ]
 dev = [
-    "pytest>=8.3",
-    "pytest-asyncio>=0.24",
-    "pytest-cov>=6.0",
-    "respx>=0.21",
-    "hypothesis>=6.115",
     "ruff>=0.7",
     "mypy>=1.13",
     "pre-commit>=4.0",
@@ -79,7 +74,7 @@ packages = ["src/pulsepoint_ai"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-src = ["src", "tests"]
+src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF"]
@@ -89,13 +84,8 @@ ignore = ["E501"]
 python_version = "3.11"
 strict = true
 plugins = ["pydantic.mypy"]
-exclude = ["notebooks", "data", "models"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-asyncio_mode = "auto"
-addopts = "-ra --strict-markers"
+exclude = ["data", "models"]
 
 [tool.coverage.run]
 source = ["src/pulsepoint_ai"]
-omit = ["*/notebooks/*", "*/scripts/*"]
+omit = ["*/scripts/*"]

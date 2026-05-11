@@ -16,17 +16,13 @@ htmlcov/
 .ruff_cache/
 
 data/raw/
-data/interim/
 data/processed/
-data/interview_qa/*.jsonl
-!data/interview_qa/.gitkeep
 # Ship the built RAG knowledge base so the deployed retriever has data
 !data/kb/
 !data/kb/*.jsonl
 !data/kb/*.npz
 
 models/**
-!models/**/.gitkeep
 # Allow trained ML artifacts to ship to HF Spaces
 !models/interviewer_lora/
 !models/interviewer_lora/*.json
@@ -47,3 +43,4 @@ mlruns/
 Thumbs.db
 .idea/
 .vscode/
+.claude/
