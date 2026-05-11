@@ -103,22 +103,4 @@ src/pulsepoint_ai/
 
 ---
 
-## Key Endpoints
-
-- `POST /api/v1/triage/assess`
-- `POST /api/v1/triage/interview`
-- `POST /api/v1/predict/disease`
-- `POST /api/v1/predict/labs`
-- `POST /api/v1/predict/symptoms-from-text`
-- `POST /api/v1/connect/care-locator`
-
----
-
-## Notes
-
-- Doctor ranking logic is configured in `configs/care_locator.yaml`.
-- Evidence and rules are stored in YAML and config files, not hard-coded in Python.
-- The service is designed as a modular API backend for a healthcare frontend.
-
----
 
