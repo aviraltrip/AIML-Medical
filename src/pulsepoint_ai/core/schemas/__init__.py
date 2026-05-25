@@ -1,4 +1,3 @@
-from pulsepoint_ai.core.schemas.audit import AuditEntry, AuditExportRow
 from pulsepoint_ai.core.schemas.common import (
     Gender,
     PatientProfile,
@@ -23,28 +22,18 @@ from pulsepoint_ai.core.schemas.predict import (
     DiseasePredictResponse,
 )
 from pulsepoint_ai.core.schemas.rag import RagSearchRequest, RagSearchResponse, RetrievedChunk
-from pulsepoint_ai.core.schemas.scoring import (
-    HealthRiskRequest,
-    HealthRiskResponse,
-    WeeklyDigestRequest,
-    WeeklyDigestResponse,
-)
 from pulsepoint_ai.core.schemas.triage import (
     TriageAssessRequest,
     TriageAssessResponse,
 )
 
 __all__ = [
-    "AuditEntry",
-    "AuditExportRow",
     "ConditionCardRequest",
     "ConditionCardResponse",
     "DiseasePrediction",
     "DiseasePredictRequest",
     "DiseasePredictResponse",
     "Gender",
-    "HealthRiskRequest",
-    "HealthRiskResponse",
     "InterviewerRequest",
     "InterviewerResponse",
     "LabAnalyzeRequest",
@@ -59,6 +48,4 @@ __all__ = [
     "TriageAssessRequest",
     "TriageAssessResponse",
     "Vitals",
-    "WeeklyDigestRequest",
-    "WeeklyDigestResponse",
 ]
