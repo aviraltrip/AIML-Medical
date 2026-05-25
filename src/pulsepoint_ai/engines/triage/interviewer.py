@@ -237,6 +237,41 @@ class SymptomInterviewer:
                 "What is your typical diet? Do you consume high-salt, fried, or wheat/rice-heavy meals?",
                 "Evaluates nutritional risks for metabolic syndrome.",
                 AnswerType.FREE_TEXT
+            ),
+            (
+                "Have you recently experienced sudden blurriness or difficulty reading, even with glasses?",
+                "Screens for early diabetic retinopathy or vascular changes.",
+                AnswerType.YES_NO
+            ),
+            (
+                "Do you feel any burning, tingling, or loss of sensation in your hands or feet?",
+                "Screens for diabetic peripheral neuropathy symptoms.",
+                AnswerType.YES_NO
+            ),
+            (
+                "If you have been pregnant, did you ever have high blood sugar or a baby weighing over 4 kg?",
+                "Assesses risk of gestational diabetes history which increases Type 2 Diabetes risk.",
+                AnswerType.YES_NO
+            ),
+            (
+                "Have you noticed dark, velvety patches of skin around your neck or armpits?",
+                "Screens for acanthosis nigricans, a hallmark sign of insulin resistance.",
+                AnswerType.YES_NO
+            ),
+            (
+                "Do you snore loudly at night or feel extremely sleepy during the daytime?",
+                "Identifies potential sleep apnea, highly correlated with metabolic syndrome.",
+                AnswerType.YES_NO
+            ),
+            (
+                "What is your primary mode of travel to the PHC, and how much does it cost you?",
+                "Socioeconomic accessibility screening for default risk.",
+                AnswerType.FREE_TEXT
+            ),
+            (
+                "What is your approximate weight and height, or do you consider yourself overweight?",
+                "Assesses BMI indicators for diabetic staging.",
+                AnswerType.FREE_TEXT
             )
         ]
 
