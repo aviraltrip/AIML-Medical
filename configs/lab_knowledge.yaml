@@ -55,3 +55,9 @@ calcium:
   description: "One of the most important minerals in the body; essential for bones, teeth, and heart function."
 albumin:
   description: "A protein made by your liver that helps keep fluid in your bloodstream and carries substances throughout the body."
+postprandial_glucose:
+  description: "Measures the amount of sugar (glucose) in your blood two hours after the start of a meal."
+urine_protein:
+  description: "Measures the amount of protein in your urine, which can be an early sign of kidney strain or damage."
+microalbumin:
+  description: "Detects tiny amounts of a protein called albumin in your urine, which is a key early indicator of kidney disease, especially in people with diabetes or high blood pressure."

@@ -59,7 +59,7 @@ tests:
       adult: { low: 70, high: 140 }
 
   hba1c:
-    aliases: ["hba1c", "glycated hemoglobin"]
+    aliases: ["hba1c", "hb-a1c", "hb a1c", "hba-1c", "hba 1c", "glycated hemoglobin", "glycohemoglobin"]
     unit: "%"
     ranges:
       adult: { low: 4.0, high: 5.6 }
@@ -272,3 +272,21 @@ tests:
     unit: "ng/mL"
     ranges:
       adult: { low: 0, high: 500 }
+
+  postprandial_glucose:
+    aliases: ["postprandial glucose", "ppbs", "postprandial blood sugar", "2-hour postprandial glucose", "2 hr ppbs", "pp glucose", "2-hour postprandial blood sugar"]
+    unit: "mg/dL"
+    ranges:
+      adult: { low: 70, high: 140 }
+
+  urine_protein:
+    aliases: ["urine protein", "protein urine", "proteinuria", "u-prot", "urinary protein"]
+    unit: "mg/dL"
+    ranges:
+      adult: { low: 0, high: 20 }
+
+  microalbumin:
+    aliases: ["microalbumin", "urine microalbumin", "microalbuminuria", "u-alb", "urinary microalbumin", "uacr", "albumin creatinine ratio"]
+    unit: "mg/L"
+    ranges:
+      adult: { low: 0, high: 30 }

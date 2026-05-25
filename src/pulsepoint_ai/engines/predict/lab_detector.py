@@ -1,7 +1,7 @@
 """Deterministic lab abnormal detector. Regex extraction + hardcoded ranges.
 
 This module is the GROUND TRUTH for the hallucination guard around lab explanations.
-It cannot be influenced by an LLM.
+It cannot be influenced by an LLM. It is optimized for low-resource rural OCR noise.
 """
 from __future__ import annotations
 
@@ -47,10 +47,11 @@ def _classify(value: float, low: float | None, high: float | None) -> LabStatus:
 
 
 def detect_labs(ocr_text: str, age: int, gender: Gender) -> tuple[list[LabFlag], int]:
-    """Returns (all_lab_results, count_normal). Caller filters to flagged subset
-    if needed."""
+    """Returns (all_lab_results, count_normal). Matches fuzzy, noisy OCR text."""
     cfg = get_lab_ranges()["tests"]
-    text = ocr_text.lower()
+    
+    # Normalize spacing and lowercase text to tolerate OCR scanning noise
+    text = " ".join(ocr_text.split()).lower()
     key = _RangeKey(age=age, gender=gender)
 
     results: list[LabFlag] = []
@@ -60,9 +61,18 @@ def detect_labs(ocr_text: str, age: int, gender: Gender) -> tuple[list[LabFlag],
         if canonical in seen:
             continue
         for alias in test_cfg["aliases"]:
-            # match alias followed by ":" or whitespace then a number
+            # Clean the alias directly by substituting spaces/hyphens/underscores/dots with a purely alphanumeric token
+            cleaned_alias = alias.lower()
+            cleaned_alias = re.sub(r"[\s\-_.]+", "SPACEPLACEHOLDER", cleaned_alias)
+            
+            # Escape the alias pattern, then substitute the placeholder with the tolerant regex pattern
+            alias_pattern = re.escape(cleaned_alias)
+            alias_pattern = alias_pattern.replace("SPACEPLACEHOLDER", r"[\s\-_.]*")
+            
+            # Match the alias, followed by up to 25 non-digit chars (noise, colons, equals, units, words)
+            # and then the float/integer value.
             pattern = re.compile(
-                rf"\b{re.escape(alias)}\b[\s:=]*([-+]?\d+(?:\.\d+)?)", re.IGNORECASE
+                rf"\b{alias_pattern}\b[^\d]{{0,25}}?([-+]?\d+(?:\.\d+)?)", re.IGNORECASE
             )
             m = pattern.search(text)
             if m:
@@ -70,8 +80,48 @@ def detect_labs(ocr_text: str, age: int, gender: Gender) -> tuple[list[LabFlag],
                     value = float(m.group(1))
                 except ValueError:
                     continue
+                
                 low, high = _pick_range(test_cfg, key)
                 status = _classify(value, low, high)
+                
+                # Enforce required chronic metabolic diagnostic thresholds
+                if canonical == "hba1c":
+                    # >= 5.7% is prediabetic (HIGH), >= 6.5% is high diabetic risk (HIGH)
+                    if value >= 5.7:
+                        status = LabStatus.HIGH
+                    else:
+                        status = LabStatus.NORMAL
+                elif canonical == "fasting_glucose":
+                    # >= 100 mg/dL is abnormal (HIGH), >= 126 mg/dL is high diabetic risk (HIGH)
+                    if value >= 100:
+                        status = LabStatus.HIGH
+                    else:
+                        status = LabStatus.NORMAL
+                elif canonical == "random_glucose":
+                    # >= 140 mg/dL is abnormal (HIGH), >= 200 mg/dL is diabetic risk (HIGH)
+                    if value >= 140:
+                        status = LabStatus.HIGH
+                    else:
+                        status = LabStatus.NORMAL
+                elif canonical == "postprandial_glucose":
+                    # >= 140 mg/dL is abnormal (HIGH), >= 200 mg/dL is diabetic risk (HIGH)
+                    if value >= 140:
+                        status = LabStatus.HIGH
+                    else:
+                        status = LabStatus.NORMAL
+                elif canonical == "microalbumin":
+                    # >= 30 mg/L is microalbuminuria (HIGH)
+                    if value >= 30:
+                        status = LabStatus.HIGH
+                    else:
+                        status = LabStatus.NORMAL
+                elif canonical == "urine_protein":
+                    # >= 20 mg/dL is abnormal proteinuria (HIGH)
+                    if value >= 20:
+                        status = LabStatus.HIGH
+                    else:
+                        status = LabStatus.NORMAL
+
                 results.append(
                     LabFlag(
                         name=alias,

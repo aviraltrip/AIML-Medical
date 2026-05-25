@@ -13,11 +13,11 @@ DISCLAIMER = (
 EMERGENCY_NUMBER_IN = "108"
 
 NEXT_ACTION_BY_TIER: dict[SeverityTier, str] = {
-    SeverityTier.LOW: "self_care_and_monitor",
-    SeverityTier.MEDIUM: "see_doctor_within_48h",
-    SeverityTier.HIGH: "see_doctor_today",
-    SeverityTier.URGENT: "go_to_hospital_now",
-    SeverityTier.EMERGENCY: f"call_{EMERGENCY_NUMBER_IN}_immediately",
+    SeverityTier.LOW: "lifestyle counseling and monthly follow-up by CHW",
+    SeverityTier.MEDIUM: "repeat BP after rest and lifestyle counseling",
+    SeverityTier.HIGH: "HbA1c screening and fasting glucose test",
+    SeverityTier.URGENT: "PHC referral for medical evaluation within 48h",
+    SeverityTier.EMERGENCY: "immediate PHC referral required due to crisis-level screening values",
 }
 
 # Patterns the LLM is never allowed to emit. Strip or block.

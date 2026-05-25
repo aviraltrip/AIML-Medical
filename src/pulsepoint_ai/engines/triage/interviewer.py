@@ -190,108 +190,63 @@ class SymptomInterviewer:
         answered: list[AnsweredQuestion],
     ) -> tuple[str, str, AnswerType]:
         """Last-resort deterministic rules. Returns (question, rationale, answer_type)."""
-        if not symptoms:
-            return (
-                "Could you describe your main symptom in your own words?",
-                "Need a chief complaint to start triage.",
-                AnswerType.FREE_TEXT,
-            )
-
-        joined = " ".join(s.lower() for s in symptoms)
         asked = {a.question.strip().lower() for a in answered}
 
-        candidates: list[tuple[str, str, AnswerType]] = []
-
-        if "chest" in joined:
-            candidates += [
-                ("Does the pain radiate to your left arm, jaw, or back?",
-                 "Radiation pattern discriminates ACS from musculoskeletal pain.", AnswerType.YES_NO),
-                ("On a scale of 0 to 10, how severe is the pain right now?",
-                 "Severity helps risk-stratify cardiac vs benign causes.", AnswerType.SCALE),
-                ("Does the pain get worse when you take a deep breath?",
-                 "Pleuritic pain points toward PE or pericarditis.", AnswerType.YES_NO),
-            ]
-        if "abdominal" in joined or "stomach" in joined or "belly" in joined:
-            candidates += [
-                ("Did the pain start near your navel and move to the right lower side?",
-                 "Migration to RLQ is classic for appendicitis.", AnswerType.YES_NO),
-                ("Have you vomited or lost your appetite since the pain started?",
-                 "Anorexia/vomiting raises suspicion for surgical abdomen.", AnswerType.YES_NO),
-                ("On a scale of 0 to 10, how severe is the pain at its worst?",
-                 "Severity drives urgency tier.", AnswerType.SCALE),
-            ]
-        if "headache" in joined or "head pain" in joined:
-            candidates += [
-                ("Is this the worst headache of your life, or did it start very suddenly?",
-                 "Thunderclap headache is a red flag for SAH.", AnswerType.YES_NO),
-                ("Do you have any new vision changes, weakness, or numbness?",
-                 "Focal neuro signs flag stroke or mass effect.", AnswerType.YES_NO),
-                ("Is there any fever or stiffness in your neck?",
-                 "Meningismus suggests meningitis.", AnswerType.YES_NO),
-            ]
-        if "shortness" in joined or "breath" in joined or "dyspnea" in joined:
-            candidates += [
-                ("Does the breathlessness get worse when you lie flat?",
-                 "Orthopnea points to heart failure.", AnswerType.YES_NO),
-                ("Is one of your legs swollen, red, or painful?",
-                 "Unilateral leg swelling raises PE suspicion.", AnswerType.YES_NO),
-                ("On a scale of 0 to 10, how hard is it to breathe right now?",
-                 "Severity drives ED routing.", AnswerType.SCALE),
-            ]
-        if "fever" in joined or "chills" in joined:
-            candidates += [
-                ("How many days have you had the fever?",
-                 "Duration shifts differential between viral and bacterial.", AnswerType.FREE_TEXT),
-                ("What was the highest temperature you measured?",
-                 "Magnitude flags bacteremia risk.", AnswerType.FREE_TEXT),
-                ("Do you have any new cough, burning urination, or skin rash?",
-                 "Localizing symptoms point to source of infection.", AnswerType.YES_NO),
-            ]
-        if "cough" in joined:
-            candidates += [
-                ("Are you coughing up blood, yellow/green sputum, or is it dry?",
-                 "Sputum character distinguishes pneumonia, bronchitis, TB.", AnswerType.FREE_TEXT),
-                ("How many days or weeks have you had the cough?",
-                 "Duration separates acute from chronic causes.", AnswerType.FREE_TEXT),
-                ("Have you had any fever, weight loss, or night sweats?",
-                 "B-symptoms flag TB, malignancy.", AnswerType.YES_NO),
-            ]
-        if "dizz" in joined or "vertigo" in joined or "spinning" in joined:
-            candidates += [
-                ("Does the room feel like it is spinning, or do you feel faint?",
-                 "Vertigo vs presyncope splits the differential cleanly.", AnswerType.FREE_TEXT),
-                ("Does the dizziness get worse when you change head position?",
-                 "Positional trigger suggests BPPV.", AnswerType.YES_NO),
-                ("Have you had any new weakness, numbness, or trouble speaking?",
-                 "Focal signs flag posterior-circulation stroke.", AnswerType.YES_NO),
-            ]
-        if "back" in joined:
-            candidates += [
-                ("Do you have any numbness, weakness, or loss of bladder/bowel control?",
-                 "Cauda equina red flags require emergent imaging.", AnswerType.YES_NO),
-                ("Did the pain start after a fall, lift, or twist?",
-                 "Mechanism distinguishes mechanical from atraumatic causes.", AnswerType.YES_NO),
-                ("Does the pain shoot down one of your legs past the knee?",
-                 "Radicular pattern suggests disc herniation.", AnswerType.YES_NO),
-            ]
-        if "rash" in joined or "skin" in joined or "itch" in joined:
-            candidates += [
-                ("Is the rash spreading, and did it start in one specific area?",
-                 "Spread pattern separates contact dermatitis from systemic causes.", AnswerType.FREE_TEXT),
-                ("Have you started any new medications or foods in the last 2 weeks?",
-                 "Allergic exposure is the highest-yield history.", AnswerType.YES_NO),
-                ("Is the rash painful, blistering, or accompanied by fever?",
-                 "Pain/blisters/fever raise SJS/cellulitis suspicion.", AnswerType.YES_NO),
-            ]
+        candidates: list[tuple[str, str, AnswerType]] = [
+            (
+                "Is there a history of sugar (diabetes) or high BP in your parents or siblings?",
+                "Assesses genetic predisposition for chronic metabolic conditions.",
+                AnswerType.YES_NO
+            ),
+            (
+                "How much physical work, farming, walking, or exercise do you do in a day?",
+                "Assesses physical activity level to calculate IDRS score.",
+                AnswerType.FREE_TEXT
+            ),
+            (
+                "Do you regularly chew tobacco, smoke bidi, or drink alcohol?",
+                "Assesses behavioral risk factors for vascular health and metabolic disease.",
+                AnswerType.YES_NO
+            ),
+            (
+                "When was your blood pressure or blood sugar last checked, and what was the value?",
+                "Retrieves historical clinical baseline values if available.",
+                AnswerType.FREE_TEXT
+            ),
+            (
+                "How far is your village or home from the nearest Primary Health Centre (PHC)?",
+                "Screens for healthcare accessibility and referral delay risk.",
+                AnswerType.FREE_TEXT
+            ),
+            (
+                "Have you noticed having frequent urination at night, dry mouth, or excessive thirst?",
+                "Screens for hallmark symptoms of hyperglycemia.",
+                AnswerType.YES_NO
+            ),
+            (
+                "Do you regularly get headaches, dizziness, or chest tightness when working?",
+                "Screens for common somatic indicators of high blood pressure.",
+                AnswerType.YES_NO
+            ),
+            (
+                "Do you have any slow-healing sores or ulcers on your feet?",
+                "Screens for diabetic peripheral neuropathy or microvascular complications.",
+                AnswerType.YES_NO
+            ),
+            (
+                "What is your typical diet? Do you consume high-salt, fried, or wheat/rice-heavy meals?",
+                "Evaluates nutritional risks for metabolic syndrome.",
+                AnswerType.FREE_TEXT
+            )
+        ]
 
         for q, r, t in candidates:
             if q.lower() not in asked:
                 return q, r, t
 
-        main = symptoms[0].lower()
         return (
-            f"When did the {main} start, and has it been constant or come and go?",
-            "Onset and pattern are the highest-yield history when no template fits.",
+            "Could you tell me if you have any other concerns about sugar or blood pressure?",
+            "Fallback question to gather general chronic health concerns.",
             AnswerType.FREE_TEXT,
         )
 

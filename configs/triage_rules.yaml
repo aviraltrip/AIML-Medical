@@ -13,72 +13,51 @@ tier_rank:
   EMERGENCY: 4
 
 rules:
-  - id: spo2_critical
-    metric: spo2
-    op: lt
-    value: 90
-    tier: EMERGENCY
-    message: "Oxygen saturation below 90% — call 108 immediately."
-
-  - id: spo2_low
-    metric: spo2
-    op: lt
-    value: 94
-    tier: URGENT
-    message: "Low oxygen saturation — urgent medical review."
-
   - id: bp_hypertensive_crisis
     metric_pair: [bp_systolic, bp_diastolic]
     op: any_gte
     value: [180, 120]
-    tier: URGENT
-    message: "Blood pressure in hypertensive crisis range."
+    tier: EMERGENCY
+    message: "Blood pressure in hypertensive crisis range (>180/120 mmHg) — urgent referral required."
 
-  - id: bp_hypotensive
-    metric: bp_systolic
-    op: lt
-    value: 90
+  - id: bp_stage2_hypertension
+    metric_pair: [bp_systolic, bp_diastolic]
+    op: any_gte
+    value: [160, 100]
     tier: URGENT
-    message: "Systolic blood pressure dangerously low."
+    message: "Blood pressure in Stage 2 Hypertension range (>=160/100 mmHg) — medical evaluation recommended."
+
+  - id: bp_stage1_hypertension
+    metric_pair: [bp_systolic, bp_diastolic]
+    op: any_gte
+    value: [140, 90]
+    tier: HIGH
+    message: "Blood pressure in Stage 1 Hypertension range (>=140/90 mmHg) — lifestyle counseling and follow-up recommended."
 
   - id: blood_sugar_severe_hypo
     metric: blood_sugar_mg_dl
     op: lt
     value: 50
     tier: EMERGENCY
-    message: "Severe hypoglycemia."
+    message: "Severe hypoglycemia (<50 mg/dL) — urgent treatment and medical evaluation required."
 
   - id: blood_sugar_severe_hyper
     metric: blood_sugar_mg_dl
     op: gte
     value: 400
-    tier: URGENT
-    message: "Severe hyperglycemia — risk of DKA/HHS."
-
-  - id: pulse_tachy_critical
-    metric: pulse_bpm
-    op: gt
-    value: 150
     tier: EMERGENCY
-    message: "Severe tachycardia."
+    message: "Severe hyperglycemia (>=400 mg/dL) — urgent referral to prevent diabetic complications."
 
-  - id: pulse_brady_critical
-    metric: pulse_bpm
-    op: lt
-    value: 40
-    tier: EMERGENCY
-    message: "Severe bradycardia."
-
-  - id: temp_hyperpyrexia
-    metric: temp_c
+  - id: blood_sugar_diabetic_risk
+    metric: blood_sugar_mg_dl
     op: gte
-    value: 40
+    value: 126
     tier: URGENT
-    message: "Hyperpyrexia — urgent review."
+    message: "Fasting or random blood sugar suggests high diabetic risk (>=126 mg/dL) — confirmatory glucose/HbA1c testing recommended."
 
-  - id: temp_hypothermia
-    metric: temp_c
-    op: lt
-    value: 35
-    tier: URGENT
-    message: "Hypothermia — urgent review."
+  - id: blood_sugar_abnormal
+    metric: blood_sugar_mg_dl
+    op: gte
+    value: 100
+    tier: HIGH
+    message: "Blood sugar is elevated (>=100 mg/dL), suggesting prediabetes — lifestyle changes and monitoring recommended."

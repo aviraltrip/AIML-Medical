@@ -46,45 +46,66 @@ class DiseaseClassifier:
         gender: str | None = None,
         top_k: int | None = None
     ) -> dict[str, Any]:
-        """Predicts Top-K conditions from a list of symptoms."""
-        self._load()
-        top_k = top_k or self.cfg.get("top_k", 5)
+        """Predicts Top-K chronic conditions (Diabetes & Hypertension) from symptoms, age, and gender."""
+        from pulsepoint_ai.engines.chronic_scoring import evaluate_chronic_risk
+        from pulsepoint_ai.core.schemas.common import PatientProfile, Vitals, Gender
 
-        if not self._model:
-            return self._fallback_prediction(symptoms, top_k)
+        age_val = age if age is not None else 45
+        gender_enum = Gender.MALE if gender == "male" else (Gender.FEMALE if gender == "female" else Gender.OTHER)
 
-        # 1. Vectorize input (one-hot encoding)
-        x = np.zeros((1, len(self._feature_names)), dtype=np.float32)
-        for s in symptoms:
-            if s in self._feature_names:
-                idx = self._feature_names.index(s)
-                x[0, idx] = 1.0
+        profile = PatientProfile(
+            age=age_val,
+            gender=gender_enum,
+            known_conditions=[],
+            medications=[],
+            allergies=[]
+        )
+        vitals = Vitals()
+        
+        # Calculate risk scores using deterministic rules
+        risk_results = evaluate_chronic_risk(profile, vitals, symptoms)
 
-        # 2. Inference
-        probs = self._model.predict(x)[0]
-        top_indices = np.argsort(probs)[::-1][:top_k]
-
-        # 3. Feature importance (shared across predictions for demo)
-        importance = self._model.feature_importance(importance_type="gain")
-        top_feat_idx = np.argsort(importance)[::-1][:5]
-        top_features = [
-            {"feature": self._feature_names[i], "shap": float(importance[i])}
-            for i in top_feat_idx if x[0, i] > 0
+        predictions = [
+            {
+                "icd10": "E11",
+                "name": "Type 2 Diabetes Risk",
+                "prob": round(float(risk_results["diabetes_prob"]), 2),
+                "top_features": [
+                    {"feature": "Age Factor", "shap": float(risk_results["diabetes_breakdown"]["age_score"])},
+                    {"feature": "Waist Circumference", "shap": float(risk_results["diabetes_breakdown"]["waist_score"])},
+                    {"feature": "Physical Inactivity", "shap": float(risk_results["diabetes_breakdown"]["activity_score"])},
+                    {"feature": "Family History", "shap": float(risk_results["diabetes_breakdown"]["family_score"])},
+                ]
+            },
+            {
+                "icd10": "I10",
+                "name": "Hypertension Risk",
+                "prob": round(float(risk_results["hypertension_prob"]), 2),
+                "top_features": [
+                    {"feature": "Somatic headache / dizziness symptoms", "shap": 20.0 if any(x in " ".join(symptoms).lower() for x in ["headache", "dizziness"]) else 0.0},
+                    {"feature": "Behavioral tobacco/alcohol risk", "shap": 15.0 if any(x in " ".join(symptoms).lower() for x in ["tobacco", "alcohol", "smoking", "bidi"]) else 0.0},
+                    {"feature": "Age Factor", "shap": float(risk_results["diabetes_breakdown"]["age_score"])},
+                ]
+            }
         ]
 
-        # 4. Format results matching DiseasePrediction schema
-        predictions = []
-        for idx in top_indices:
+        # Optionally include obesity if waist circumference score is high
+        if risk_results["diabetes_breakdown"].get("waist_score", 0) >= 20:
             predictions.append({
-                "icd10": self._id_to_label[idx],
-                "name": self._get_condition_name(self._id_to_label[idx]),
-                "prob": float(probs[idx]),
-                "top_features": top_features,
+                "icd10": "E66.9",
+                "name": "Metabolic Syndrome Risk / Obesity",
+                "prob": 0.75,
+                "top_features": [
+                    {"feature": "Waist Circumference", "shap": 20.0}
+                ]
             })
 
+        predictions.sort(key=lambda x: x["prob"], reverse=True)
+        top_k = top_k or self.cfg.get("top_k", 5)
+
         return {
-            "predictions": predictions,
-            "model_version": self.cfg.get("version", "v0.1.0"),
+            "predictions": predictions[:top_k],
+            "model_version": "chronic_scoring_v1.0.0",
         }
 
     def _fallback_prediction(self, symptoms: list[str], top_k: int) -> dict[str, Any]:
