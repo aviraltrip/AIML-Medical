@@ -159,10 +159,84 @@ class LLMClient:
             }
             
         elif prompt_version == "interviewer_v1":
+            # Extract already-asked questions from the prompt to avoid repetition
+            asked_questions = set()
+            answered_match = re.search(r"Already answered \(do not repeat\):\s*(\[.*?\])", prompt, re.DOTALL)
+            if answered_match:
+                try:
+                    answered_data = json.loads(answered_match.group(1))
+                    for item in answered_data:
+                        q_text = item.get("question", "").strip().lower()
+                        if q_text:
+                            asked_questions.add(q_text)
+                except Exception as ex:
+                    print(f"Error parsing answered list: {ex}")
+
+            candidates = [
+                (
+                    "Is there a history of sugar (diabetes) or high BP in your parents or siblings?",
+                    "Assesses genetic predisposition for chronic metabolic conditions.",
+                    "yes_no"
+                ),
+                (
+                    "How much physical work, farming, walking, or exercise do you do in a day?",
+                    "Assesses physical activity level to calculate IDRS score.",
+                    "free_text"
+                ),
+                (
+                    "Do you regularly chew tobacco, smoke bidi, or drink alcohol?",
+                    "Assesses behavioral risk factors for vascular health and metabolic disease.",
+                    "yes_no"
+                ),
+                (
+                    "When was your blood pressure or blood sugar last checked, and what was the value?",
+                    "Retrieves historical clinical baseline values if available.",
+                    "free_text"
+                ),
+                (
+                    "How far is your village or home from the nearest Primary Health Centre (PHC)?",
+                    "Screens for healthcare accessibility and referral delay risk.",
+                    "free_text"
+                ),
+                (
+                    "Have you noticed having frequent urination at night, dry mouth, or excessive thirst?",
+                    "Screens for hallmark symptoms of hyperglycemia.",
+                    "yes_no"
+                ),
+                (
+                    "Do you regularly get headaches, dizziness, or chest tightness when working?",
+                    "Screens for common somatic indicators of high blood pressure.",
+                    "yes_no"
+                ),
+                (
+                    "Do you have any slow-healing sores or ulcers on your feet?",
+                    "Screens for diabetic peripheral neuropathy or microvascular complications.",
+                    "yes_no"
+                ),
+                (
+                    "What is your typical diet? Do you consume high-salt, fried, or wheat/rice-heavy meals?",
+                    "Evaluates nutritional risks for metabolic syndrome.",
+                    "free_text"
+                )
+            ]
+
+            for q, r, t in candidates:
+                is_asked = False
+                for asked in asked_questions:
+                    if asked in q.lower() or q.lower() in asked:
+                        is_asked = True
+                        break
+                if not is_asked:
+                    return {
+                        "question": q,
+                        "rationale": r,
+                        "expected_answer_type": t
+                    }
+            
             return {
-                "question": "Is there a history of sugar (diabetes) or high BP in your parents or siblings?",
-                "rationale": "Determines genetic predisposition for metabolic screening.",
-                "expected_answer_type": "yes_no"
+                "question": "Could you tell me if you have any other concerns about sugar or blood pressure?",
+                "rationale": "Fallback question to gather general chronic health concerns.",
+                "expected_answer_type": "free_text"
             }
             
         elif prompt_version == "medreach_v1":
