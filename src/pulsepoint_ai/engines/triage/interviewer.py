@@ -14,8 +14,8 @@ from typing import Any
 from pulsepoint_ai.core.config import get_models_config, get_settings
 from pulsepoint_ai.core.schemas.common import PatientProfile
 from pulsepoint_ai.core.schemas.interview import (
-    AnswerType,
     AnsweredQuestion,
+    AnswerType,
     InterviewerRequest,
     InterviewerResponse,
 )
@@ -45,8 +45,8 @@ class SymptomInterviewer:
 
             try:
                 import torch
-                from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
                 from peft import PeftModel
+                from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
             except ImportError as e:
                 self._load_failed_reason = f"missing inference deps: {e}"
                 print(f"Interviewer LoRA skipped — {self._load_failed_reason}.")
@@ -286,7 +286,7 @@ class SymptomInterviewer:
         )
 
 
-# Global instance for easy access (load lazily on first request)
+
 interviewer = SymptomInterviewer()
 
 

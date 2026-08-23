@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import lightgbm as lgb
-import numpy as np
+
 from pulsepoint_ai.core.config import get_models_config
+
 
 class DiseaseClassifier:
     def __init__(self) -> None:
@@ -28,9 +29,9 @@ class DiseaseClassifier:
         self._model = lgb.Booster(model_file=str(model_path))
         self._label_map = json.loads(Path(self.cfg["label_map"]).read_text())
         self._feature_names = json.loads(Path(self.cfg["feature_names"]).read_text())
-        # Build id -> icd10 mapping. Supports two label_map formats:
-        #   {icd10: int}           -> simple
-        #   {icd10: {id, name}}    -> rich (training script produces this)
+
+
+
         id_to_label: dict[int, str] = {}
         for key, val in self._label_map.items():
             if isinstance(val, int):
@@ -47,8 +48,8 @@ class DiseaseClassifier:
         top_k: int | None = None
     ) -> dict[str, Any]:
         """Predicts Top-K chronic conditions (Diabetes & Hypertension) from symptoms, age, and gender."""
+        from pulsepoint_ai.core.schemas.common import Gender, PatientProfile, Vitals
         from pulsepoint_ai.engines.chronic_scoring import evaluate_chronic_risk
-        from pulsepoint_ai.core.schemas.common import PatientProfile, Vitals, Gender
 
         age_val = age if age is not None else 45
         gender_enum = Gender.MALE if gender == "male" else (Gender.FEMALE if gender == "female" else Gender.OTHER)
@@ -61,8 +62,8 @@ class DiseaseClassifier:
             allergies=[]
         )
         vitals = Vitals()
-        
-        # Calculate risk scores using deterministic rules
+
+
         risk_results = evaluate_chronic_risk(profile, vitals, symptoms)
 
         predictions = [
@@ -89,7 +90,7 @@ class DiseaseClassifier:
             }
         ]
 
-        # Optionally include obesity if waist circumference score is high
+
         if risk_results["diabetes_breakdown"].get("waist_score", 0) >= 20:
             predictions.append({
                 "icd10": "E66.9",
@@ -111,7 +112,7 @@ class DiseaseClassifier:
     def _fallback_prediction(self, symptoms: list[str], top_k: int) -> dict[str, Any]:
         """Rule-based fallback when ML model isn't shipped."""
         symptom_set = {s.lower().replace(" ", "_") for s in symptoms}
-        # Coarse symptom -> condition prior table
+
         candidates = [
             ("J45.909", "Asthma", {"shortness_of_breath", "wheezing", "cough"}),
             ("J18.9", "Pneumonia", {"fever", "cough", "shortness_of_breath", "chest_pain"}),
@@ -145,9 +146,9 @@ class DiseaseClassifier:
         ]
         return {"predictions": predictions, "model_version": "fallback_v1"}
 
-    # Built-in ICD-10 -> human name fallback. The label_map.json shipped with
-    # the trained classifier is used in preference when available.
-    _ICD10_NAME_FALLBACK = {
+
+
+    _ICD10_NAME_FALLBACK: ClassVar[dict[str, str]] = {
         "I21.9": "Acute Myocardial Infarction",
         "I26.9": "Pulmonary Embolism",
         "I50.9": "Acute Heart Failure",
@@ -164,22 +165,22 @@ class DiseaseClassifier:
     }
 
     def _get_condition_name(self, icd10: str) -> str:
-        # Prefer label_map.json values if it embeds a name (some training pipelines
-        # store {"icd10": {"id": int, "name": str}}); otherwise use the static map.
+
+
         if isinstance(self._label_map, dict):
             entry = self._label_map.get(icd10)
             if isinstance(entry, dict) and entry.get("name"):
                 return str(entry["name"])
         return self._ICD10_NAME_FALLBACK.get(icd10, icd10)
 
-# Global instance
+
 disease_classifier = DiseaseClassifier()
 
-# Module-level convenience proxies so callers can do `infer.predict(...)`
+
 def predict(
-    symptoms: list[str], 
-    age: int | None = None, 
-    gender: str | None = None, 
+    symptoms: list[str],
+    age: int | None = None,
+    gender: str | None = None,
     top_k: int | None = None
 ) -> dict[str, Any]:
     return disease_classifier.predict(symptoms, age=age, gender=gender, top_k=top_k)

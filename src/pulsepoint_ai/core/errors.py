@@ -40,7 +40,7 @@ class ModelNotLoadedError(PulsePointError):
     http_status = 503
 
 
-class HallucinationDetected(PulsePointError):
+class HallucinationDetectedError(PulsePointError):
     """Raised internally when guard blocks output. NOT returned to clients —
     the cleaned output is returned instead, with the hallucination logged."""
 

@@ -31,19 +31,19 @@ import yaml
 
 OUTPUT_DIR = Path("models/triage_lgbm")
 RNG_SEED = 42
-SAMPLES_PER_TIER = 1000  # 5 tiers x 1000 = 5000 rows
+SAMPLES_PER_TIER = 1000
 SYMPTOM_DROP_PROB = 0.05
 DISTRACTOR_PROB = 0.01
 
 SEVERITY_LABELS = ["LOW", "MEDIUM", "HIGH", "URGENT", "EMERGENCY"]
 
-# Vital feature names — must match infer.py's primary aliases (see _VITAL_FEATURE_ALIASES).
+
 VITAL_FEATURES = [
     "spo2", "bp_systolic", "bp_diastolic", "blood_sugar_mg_dl",
     "pulse_bpm", "temp_c", "respiratory_rate",
 ]
 
-# Vital sampling ranges per tier — calibrated to WHO ETAT / ESI thresholds.
+
 VITAL_RANGES: dict[str, dict[str, tuple[float, float]]] = {
     "LOW":       {"spo2": (96, 100), "bp_systolic": (110, 130), "bp_diastolic": (70, 85),
                   "blood_sugar_mg_dl": (80, 110), "pulse_bpm": (60, 90),
@@ -62,7 +62,7 @@ VITAL_RANGES: dict[str, dict[str, tuple[float, float]]] = {
                   "temp_c": (33.5, 41.5), "respiratory_rate": (4, 40)},
 }
 
-# Cardinal symptom clusters per tier — all names sourced from configs/symptoms.yaml.
+
 SYMPTOMS_PER_TIER: dict[str, list[list[str]]] = {
     "LOW": [
         ["runny_nose", "sneezing", "sore_throat"],
@@ -113,16 +113,16 @@ SYMPTOMS_PER_TIER: dict[str, list[list[str]]] = {
         ["dehydration", "lethargy_infant"],
     ],
     "EMERGENCY": [
-        ["chest_pain", "shortness_of_breath", "cold_sweats", "sweating_excessive"],   # MI
-        ["facial_droop", "slurred_speech", "weakness_one_side"],                      # stroke
+        ["chest_pain", "shortness_of_breath", "cold_sweats", "sweating_excessive"],
+        ["facial_droop", "slurred_speech", "weakness_one_side"],
         ["loss_of_consciousness"],
         ["anaphylaxis_signs", "throat_swelling", "tongue_swelling"],
         ["seizure", "loss_of_consciousness"],
         ["severe_bleeding", "loss_of_consciousness"],
         ["chest_pain", "syncope"],
         ["cyanosis", "shortness_of_breath"],
-        ["severe_headache_sudden", "neck_stiffness", "photophobia"],                  # SAH
-        ["rigid_abdomen", "rebound_tenderness", "high_fever"],                        # peritonitis
+        ["severe_headache_sudden", "neck_stiffness", "photophobia"],
+        ["rigid_abdomen", "rebound_tenderness", "high_fever"],
     ],
 }
 
@@ -172,17 +172,17 @@ def main() -> None:
     np.random.seed(RNG_SEED)
 
     print(f"Generating dataset: {len(SEVERITY_LABELS)} tiers x {SAMPLES_PER_TIER} samples = {len(SEVERITY_LABELS) * SAMPLES_PER_TIER} rows")
-    X, y, feature_names = _generate_dataset(rng)
+    x, y, feature_names = _generate_dataset(rng)
     print(f"Feature space: {len(feature_names)} ({len(feature_names) - len(VITAL_FEATURES)} symptoms + {len(VITAL_FEATURES)} vitals)")
 
-    perm = np.random.permutation(len(X))
-    X, y = X[perm], y[perm]
-    split = int(len(X) * 0.8)
-    X_train, X_val, y_train, y_val = X[:split], X[split:], y[:split], y[split:]
+    perm = np.random.permutation(len(x))
+    x, y = x[perm], y[perm]
+    split = int(len(x) * 0.8)
+    x_train, x_val, y_train, y_val = x[:split], x[split:], y[:split], y[split:]
 
-    print(f"Training LightGBM ({len(X_train)} train / {len(X_val)} val)...")
-    train_data = lgb.Dataset(X_train, label=y_train, feature_name=feature_names)
-    val_data = lgb.Dataset(X_val, label=y_val, feature_name=feature_names, reference=train_data)
+    print(f"Training LightGBM ({len(x_train)} train / {len(x_val)} val)...")
+    train_data = lgb.Dataset(x_train, label=y_train, feature_name=feature_names)
+    val_data = lgb.Dataset(x_val, label=y_val, feature_name=feature_names, reference=train_data)
 
     params = {
         "objective": "multiclass",
@@ -203,8 +203,8 @@ def main() -> None:
         callbacks=[lgb.early_stopping(30), lgb.log_evaluation(0)],
     )
 
-    val_preds = np.argmax(model.predict(X_val), axis=1)
-    train_preds = np.argmax(model.predict(X_train), axis=1)
+    val_preds = np.argmax(model.predict(x_val), axis=1)
+    train_preds = np.argmax(model.predict(x_train), axis=1)
     train_acc = float(np.mean(train_preds == y_train))
     val_acc = float(np.mean(val_preds == y_val))
     print(f"\nTrain accuracy: {train_acc:.3f}")
@@ -219,13 +219,13 @@ def main() -> None:
             per_tier[tier] = {"accuracy": tier_acc, "n_samples": int(mask.sum())}
             print(f"  {tier:10}: {tier_acc:.3f} ({int(mask.sum())} samples)")
 
-    # ---------- SHAP analysis ----------
+
     shap_importance: list[dict] = []
     try:
         import shap
         print("\nComputing SHAP feature importance (TreeExplainer)...")
         explainer = shap.TreeExplainer(model)
-        sample = X_val[:300]
+        sample = x_val[:300]
         shap_values = explainer.shap_values(sample)
         if isinstance(shap_values, list):
             stacked = np.stack([np.abs(sv).mean(axis=0) for sv in shap_values])
@@ -244,7 +244,7 @@ def main() -> None:
     except Exception as e:
         print(f"SHAP analysis skipped: {e}")
 
-    # ---------- Save artifacts ----------
+
     model.save_model(str(OUTPUT_DIR / "model.txt"))
     (OUTPUT_DIR / "feature_names.json").write_text(json.dumps(feature_names, indent=2))
     (OUTPUT_DIR / "label_map.json").write_text(
@@ -254,9 +254,9 @@ def main() -> None:
         (OUTPUT_DIR / "shap_importance.json").write_text(json.dumps(shap_importance, indent=2))
 
     metrics = {
-        "n_samples": int(len(X)),
-        "n_features": int(len(feature_names)),
-        "n_classes": int(len(SEVERITY_LABELS)),
+        "n_samples": len(x),
+        "n_features": len(feature_names),
+        "n_classes": len(SEVERITY_LABELS),
         "train_accuracy": train_acc,
         "val_accuracy": val_acc,
         "best_iteration": int(model.best_iteration or 0),

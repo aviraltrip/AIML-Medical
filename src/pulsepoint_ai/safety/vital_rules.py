@@ -43,15 +43,14 @@ def evaluate_vitals(vitals: Vitals) -> tuple[SeverityTier, list[FiredRule]]:
             if any(v is None for v in values):
                 continue
             thresholds = rule["value"]
-            if rule["op"] == "any_gte":
-                if any(v >= t for v, t in zip(values, thresholds, strict=True)):
-                    fired.append(
-                        FiredRule(
-                            rule_id=rule["id"],
-                            tier=SeverityTier(rule["tier"]),
-                            message=rule["message"],
-                        )
+            if rule["op"] == "any_gte" and any(v >= t for v, t in zip(values, thresholds, strict=True)):
+                fired.append(
+                    FiredRule(
+                        rule_id=rule["id"],
+                        tier=SeverityTier(rule["tier"]),
+                        message=rule["message"],
                     )
+                )
             continue
 
         metric = rule["metric"]

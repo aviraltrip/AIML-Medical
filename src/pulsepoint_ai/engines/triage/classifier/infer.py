@@ -7,13 +7,10 @@ from typing import Any
 
 import lightgbm as lgb
 import numpy as np
+
 from pulsepoint_ai.core.config import get_models_config
 from pulsepoint_ai.core.schemas.common import SeverityTier, Vitals
 
-
-# Canonical 5-tier ordering used during training (low -> emergency).
-# If your label_map.json uses different names/order, kb_loader logic below
-# will pick it up and override this default.
 _DEFAULT_TIER_ORDER = [
     SeverityTier.LOW,
     SeverityTier.MEDIUM,
@@ -22,8 +19,8 @@ _DEFAULT_TIER_ORDER = [
     SeverityTier.EMERGENCY,
 ]
 
-# Map vitals attribute name -> feature_names entry the model might use.
-# Supports both modern and legacy training feature names.
+
+
 _VITAL_FEATURE_ALIASES = {
     "pulse_bpm": ("pulse_bpm", "heart_rate", "hr"),
     "bp_systolic": ("bp_systolic", "sbp", "systolic_bp"),
@@ -57,11 +54,11 @@ class TriageClassifier:
             if feat_path.exists():
                 self._feature_names = json.loads(feat_path.read_text())
 
-            # Optional label_map.json -> tier ordering
+
             label_map_path = Path(self.cfg.get("label_map", "")) if self.cfg.get("label_map") else None
             if label_map_path and label_map_path.exists():
                 label_map = json.loads(label_map_path.read_text())
-                # label_map: {"LOW": 0, "MEDIUM": 1, ...}
+
                 ordered = sorted(label_map.items(), key=lambda kv: kv[1])
                 resolved = []
                 for name, _ in ordered:
@@ -87,17 +84,17 @@ class TriageClassifier:
         if not self._model or not self._feature_names:
             return self._fallback_prediction(symptoms)
 
-        # 1. Feature engineering with None-safe writes
+
         x = np.zeros((1, len(self._feature_names)), dtype=np.float32)
 
-        # Symptoms (one-hot, supports both raw and snake-cased names)
+
         for s in symptoms:
             for variant in (s, s.lower(), s.lower().replace(" ", "_")):
                 if variant in self._feature_names:
                     x[0, self._feature_names.index(variant)] = 1.0
                     break
 
-        # Vitals (skip Nones, support legacy feature names)
+
         for vitals_attr, aliases in _VITAL_FEATURE_ALIASES.items():
             value = getattr(vitals, vitals_attr, None)
             if value is None:
@@ -107,7 +104,7 @@ class TriageClassifier:
                     x[0, self._feature_names.index(alias)] = float(value)
                     break
 
-        # 2. Inference
+
         try:
             probs = self._model.predict(x)[0]
         except Exception as e:
@@ -116,7 +113,7 @@ class TriageClassifier:
 
         probs = np.atleast_1d(np.asarray(probs, dtype=np.float64))
 
-        # Align tier list length to model output
+
         tiers = self._tiers[: len(probs)] or _DEFAULT_TIER_ORDER[: len(probs)]
         if len(tiers) < len(probs):
             tiers = list(tiers) + _DEFAULT_TIER_ORDER[len(tiers) : len(probs)]
@@ -159,7 +156,7 @@ class TriageClassifier:
         }
 
 
-# Global instance
+
 triage_classifier = TriageClassifier()
 
 

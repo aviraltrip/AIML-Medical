@@ -43,7 +43,7 @@ def chunk_text(
         n = len(_ENC.encode(s))
         if cur_tokens + n > target_tokens and cur:
             chunks.append(Chunk(text=" ".join(cur), heading_path=headings or []))
-            # overlap: pop sentences from end until below overlap_tokens, then start new
+
             tail: list[str] = []
             tail_tokens = 0
             for prev in reversed(cur):

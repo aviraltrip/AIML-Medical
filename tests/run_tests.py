@@ -1,17 +1,16 @@
-import sys
 import os
+import sys
 
-# Add src to the path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 from tests.test_chronic_refactor import (
-    test_idrs_calculations,
-    test_parameter_inferences,
-    test_hypertension_staging,
-    test_chronic_risk_evaluation,
-    test_fuzzy_ocr_lab_parser,
     test_adherence_classifier,
     test_api_endpoints_contract,
+    test_chronic_risk_evaluation,
+    test_fuzzy_ocr_lab_parser,
+    test_hypertension_staging,
+    test_idrs_calculations,
+    test_parameter_inferences,
 )
 
 if __name__ == "__main__":
@@ -47,12 +46,12 @@ if __name__ == "__main__":
 
         print("\nALL TESTS PASSED SUCCESSFULLY! BACKEND REFIT IS COMPATIBLE & SAFE.")
         sys.exit(0)
-    except AssertionError as e:
+    except AssertionError:
         print("\nTEST ASSERTION FAILURE:")
         import traceback
         traceback.print_exc()
         sys.exit(1)
-    except Exception as e:
+    except Exception:
         print("\nTEST RUNNER EXECUTION ERROR:")
         import traceback
         traceback.print_exc()

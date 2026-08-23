@@ -1,15 +1,15 @@
-from fastapi import APIRouter, HTTPException, Depends
-from pulsepoint_ai.core.schemas.triage import TriageAssessRequest, TriageAssessResponse
+from fastapi import APIRouter, HTTPException
+
 from pulsepoint_ai.core.schemas.interview import InterviewerRequest, InterviewerResponse
-from pulsepoint_ai.engines.triage.pipeline import run_triage
+from pulsepoint_ai.core.schemas.triage import TriageAssessRequest, TriageAssessResponse
 from pulsepoint_ai.engines.triage.interviewer import next_question
-from pulsepoint_ai.llm.client import LLMClient
+from pulsepoint_ai.engines.triage.pipeline import run_triage
 from pulsepoint_ai.engines.triage.rag.retriever import Retriever
-import uuid
+from pulsepoint_ai.llm.client import LLMClient
 
 router = APIRouter()
 
-# Initialize shared components
+
 llm_client = LLMClient()
 retriever = Retriever()
 
@@ -23,7 +23,7 @@ async def assess_triage(request: TriageAssessRequest):
         response = await run_triage(request, llm=llm_client, retriever=retriever)
         return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/interview", response_model=InterviewerResponse)
 async def conduct_interview(request: InterviewerRequest):
@@ -35,4 +35,4 @@ async def conduct_interview(request: InterviewerRequest):
         response = await next_question(request, llm=llm_client)
         return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

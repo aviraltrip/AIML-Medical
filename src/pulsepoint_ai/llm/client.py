@@ -1,26 +1,28 @@
 import json
 import os
 import re
-from typing import Any
+import warnings
+from typing import Any, cast
 
 import litellm
-import warnings
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", FutureWarning)
     import google.generativeai as genai
 
-from pulsepoint_ai.core.config import get_models_config, get_settings, get_lab_knowledge
+from pulsepoint_ai.core.config import get_lab_knowledge, get_models_config, get_settings
+
 
 class LLMClient:
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = get_models_config()["llm"]
         self.settings = get_settings()
-        
-        # Initialize Gemini directly
+
+
         if self.settings.google_api_key:
-            genai.configure(api_key=self.settings.google_api_key)
-        
-        # Setup API keys for litellm (for fallbacks)
+            genai.configure(api_key=self.settings.google_api_key)  # type: ignore[attr-defined]
+
+
         if self.settings.openai_api_key:
             litellm.api_key = self.settings.openai_api_key
         if self.settings.openrouter_api_key:
@@ -29,20 +31,20 @@ class LLMClient:
     async def complete_json(self, prompt: str, prompt_version: str = "v1") -> dict[str, Any]:
         """Completes a prompt and parses the response as JSON."""
         primary = self.config["primary"]
-        
+
         try:
             if primary["provider"] == "gemini":
                 try:
-                    # Use the full model path from the list
+
                     model_name = primary["model"]
                     if not model_name.startswith("models/"):
                         model_name = f"models/{model_name}"
-                    
-                    # Remove hardcoded override since gemini-flash-latest is supported
 
-                    model = genai.GenerativeModel(model_name)
-                    
-                    # Disable safety filters for clinical reasoning (it's a research project)
+
+
+                    model = genai.GenerativeModel(model_name)  # type: ignore[attr-defined]
+
+
                     safety_settings = [
                         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
                         {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -52,19 +54,19 @@ class LLMClient:
 
                     response = model.generate_content(
                         prompt,
-                        generation_config=genai.GenerationConfig(
+                        generation_config=genai.GenerationConfig(  # type: ignore[attr-defined]
                             temperature=0.1,
                             max_output_tokens=2048,
                             response_mime_type="application/json",
                         ),
-                        safety_settings=safety_settings
+                        safety_settings=safety_settings  # type: ignore[arg-type]
                     )
-                    
+
                     content = response.text
                     return self._parse_json(content)
                 except Exception as e:
                     print(f"Native Gemini call failed: {e}")
-                    # Fallback to LiteLLM if native fails
+
                     return await self._complete_with_litellm(prompt)
             else:
                 return await self._complete_with_litellm(prompt)
@@ -74,14 +76,14 @@ class LLMClient:
 
     def _local_fallback(self, prompt: str, prompt_version: str) -> dict[str, Any]:
         if prompt_version == "reasoner_v1":
-            # Extract inputs from prompt
+
             diabetes_idrs = 0
             diabetes_prob = 0.0
             hypertension_staging = "Normal"
             hypertension_prob = 0.0
             severity_staging = "MEDIUM"
-            
-            # Try to find classifier_output JSON in the prompt
+
+
             classifier_match = re.search(r"Scoring Engine Staging.*?:?\s*(\{.*\})", prompt)
             if classifier_match:
                 try:
@@ -93,8 +95,8 @@ class LLMClient:
                     severity_staging = clf_data.get("severity_staging", "MEDIUM")
                 except Exception as ex:
                     print(f"Error parsing classifier_output JSON: {ex}")
-            
-            # Construct a high-quality clinical reasoner output
+
+
             return {
                 "severity": severity_staging,
                 "top_conditions": [
@@ -111,7 +113,7 @@ class LLMClient:
                 "sources": [{"id": "who_guidelines", "title": "WHO Screening Guidelines", "url": "https://who.int"}],
                 "confidence": 0.85
             }
-            
+
         elif prompt_version == "lab_explainer_v1":
             ids = re.findall(r"- ID:\s*([a-zA-Z0-9_]+)", prompt)
             knowledge = get_lab_knowledge()
@@ -123,12 +125,12 @@ class LLMClient:
                     "text": desc
                 })
             return {"explanations": explanations}
-            
+
         elif prompt_version == "condition_card_v1":
             m = re.search(r"Condition:\s*(.*?)\s*\(ICD-10:\s*(.*?)\)", prompt)
             name = m.group(1).strip() if m else "Medical Condition"
             icd10 = m.group(2).strip() if m else "Unknown"
-            
+
             if "diabetes" in name.lower() or "e11" in icd10.lower():
                 summary = "Type 2 Diabetes means your body has trouble processing sugar from food, causing high blood sugar. This can damage blood vessels over time."
                 actions = [
@@ -157,9 +159,9 @@ class LLMClient:
                 "sources": [],
                 "unsupported": False
             }
-            
+
         elif prompt_version == "interviewer_v1":
-            # Extract already-asked questions from the prompt to avoid repetition
+
             asked_questions = set()
             answered_match = re.search(r"Already answered \(do not repeat\):\s*(\[.*?\])", prompt, re.DOTALL)
             if answered_match:
@@ -267,25 +269,25 @@ class LLMClient:
                         "rationale": r,
                         "expected_answer_type": t
                     }
-            
+
             return {
                 "question": "Could you tell me if you have any other concerns about sugar or blood pressure?",
                 "rationale": "Fallback question to gather general chronic health concerns.",
                 "expected_answer_type": "free_text"
             }
-            
+
         elif prompt_version == "medreach_v1":
             return {
                 "summary": "ASHA patient requires review. Screening flags show chronic risk stage. Detail report generated."
             }
-            
+
         else:
             return {}
 
     async def _complete_with_litellm(self, prompt: str) -> dict[str, Any]:
         fallbacks = self.config.get("fallback_chain", [])
         if not fallbacks:
-            # If no fallbacks, try primary model via LiteLLM as last resort
+
             primary = self.config["primary"]
             fallbacks = [{"provider": primary["provider"], "model": primary["model"]}]
 
@@ -314,7 +316,7 @@ class LLMClient:
             except Exception as e:
                 print(f"LiteLLM call failed for {model_name}: {e}")
                 last_exception = e
-                
+
         if last_exception is not None:
             raise last_exception
         raise RuntimeError("All fallback models failed to complete.")
@@ -322,30 +324,30 @@ class LLMClient:
     def _parse_json(self, raw_text: str) -> dict[str, Any]:
         """Cleans up markdown formatting and safely parses JSON with detailed error logging."""
         raw_text = raw_text.strip()
-        # Clean up potential markdown formatting
+
         if raw_text.startswith("```json"):
             raw_text = raw_text.replace("```json", "", 1).rsplit("```", 1)[0].strip()
         elif raw_text.startswith("```"):
             raw_text = raw_text.replace("```", "", 1).rsplit("```", 1)[0].strip()
-            
+
         try:
-            return json.loads(raw_text)
+            return cast(dict[str, Any], json.loads(raw_text))
         except json.JSONDecodeError as e:
             print("=== Gemini raw output that failed to parse ===")
             print(repr(raw_text))
             print("=== Error ===", e)
-            
-            # Simple heuristic fix for truncated JSON (often missing closing braces)
+
+
             try:
                 fixed_text = raw_text
                 if fixed_text.count("{") > fixed_text.count("}"):
                     fixed_text += "}"
                 if fixed_text.count("[") > fixed_text.count("]"):
                     fixed_text += "]"
-                # Try parsing again
-                return json.loads(fixed_text)
+
+                return cast(dict[str, Any], json.loads(fixed_text))
             except Exception:
-                pass # If it still fails, raise the original error
-                
+                pass
+
             raise
 

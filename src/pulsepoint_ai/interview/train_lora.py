@@ -54,15 +54,15 @@ def main() -> None:
     ap.add_argument("--lr", type=float, default=2e-4)
     args = ap.parse_args()
 
-    # Imports deferred so this module is importable without GPU deps installed.
-    from datasets import load_dataset  # noqa: PLC0415
-    from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training  # noqa: PLC0415
-    from transformers import (  # noqa: PLC0415
+
+    from datasets import load_dataset
+    from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+    from transformers import (
         AutoModelForCausalLM,
         AutoTokenizer,
         BitsAndBytesConfig,
     )
-    from trl import SFTConfig, SFTTrainer  # noqa: PLC0415
+    from trl import SFTConfig, SFTTrainer
 
     bnb = BitsAndBytesConfig(
         load_in_4bit=True,

@@ -30,9 +30,9 @@ from pulsepoint_ai.core.schemas.triage import (
 __all__ = [
     "ConditionCardRequest",
     "ConditionCardResponse",
-    "DiseasePrediction",
     "DiseasePredictRequest",
     "DiseasePredictResponse",
+    "DiseasePrediction",
     "Gender",
     "InterviewerRequest",
     "InterviewerResponse",

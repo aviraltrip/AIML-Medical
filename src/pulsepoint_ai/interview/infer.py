@@ -12,8 +12,8 @@ from pulsepoint_ai.llm.parsers import extract_json
 
 @lru_cache(maxsize=1)
 def _load() -> tuple[Any, Any]:
-    from peft import PeftModel  # noqa: PLC0415
-    from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: PLC0415
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     cfg = get_models_config()["interviewer"]
     tok = AutoTokenizer.from_pretrained(cfg["base_model"])

@@ -1,7 +1,3 @@
-# Reference ranges for 40+ common lab tests.
-# Sources: WHO, MOHFW STG, Lab Tests Online, Mayo Clinic.
-# Each entry specifies aliases (regex-friendly), unit, and gender/age-aware ranges.
-# Reviewed by clinical teammate.
 
 version: v0.1.0
 

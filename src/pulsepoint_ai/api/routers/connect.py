@@ -1,17 +1,19 @@
+import uuid
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Any, Dict, List
-from pulsepoint_ai.engines.connect import care_locator, medreach, translation
+
 from pulsepoint_ai.core.schemas.care import CareLocatorRequest, CareLocatorResponse
+from pulsepoint_ai.engines.connect import care_locator, medreach, translation
 from pulsepoint_ai.llm.client import LLMClient
-import uuid
 
 router = APIRouter()
 llm_client = LLMClient()
 
 class MedReachRequest(BaseModel):
-    patient_data: Dict[str, Any]
-    triage_history: List[Dict[str, Any]]
+    patient_data: dict[str, Any]
+    triage_history: list[dict[str, Any]]
 
 class TranslationRequest(BaseModel):
     text: str
@@ -24,8 +26,8 @@ async def summarize_case(request: MedReachRequest):
     """
     try:
         summary = await medreach.summarize_for_doctor(
-            request.patient_data, 
-            request.triage_history, 
+            request.patient_data,
+            request.triage_history,
             llm=llm_client
         )
         return {
@@ -33,7 +35,7 @@ async def summarize_case(request: MedReachRequest):
             "summary": summary
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/translate")
 async def translate_text(request: TranslationRequest):
@@ -52,7 +54,7 @@ async def translate_text(request: TranslationRequest):
             "target_language": request.target_language
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/care-locator", response_model=CareLocatorResponse)
@@ -73,4 +75,4 @@ async def find_nearby_care(request: CareLocatorRequest):
     try:
         return care_locator.find_care(request)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

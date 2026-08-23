@@ -17,22 +17,21 @@ from typing import Any
 from pulsepoint_ai.core.config import get_triage_rules
 from pulsepoint_ai.core.schemas.common import SeverityTier
 from pulsepoint_ai.core.schemas.triage import (
+    FeatureImportance,
     HallucinationCheck,
+    TopCondition,
     TriageAssessRequest,
     TriageAssessResponse,
 )
-from pulsepoint_ai.llm.client import LLMClient
+from pulsepoint_ai.engines.chronic_scoring import evaluate_chronic_risk
+from pulsepoint_ai.engines.triage import reasoner
+from pulsepoint_ai.engines.triage.classifier import infer_adherence
 from pulsepoint_ai.engines.triage.rag.retriever import Retriever
+from pulsepoint_ai.llm.client import LLMClient
 from pulsepoint_ai.safety import vital_rules
 from pulsepoint_ai.safety.hallucination_guard import set_difference_guard
 from pulsepoint_ai.safety.safety_rails import next_action_for
-from pulsepoint_ai.engines.triage import reasoner
-from pulsepoint_ai.engines.triage.classifier import infer as clf_infer
-from pulsepoint_ai.engines.triage.classifier import infer_adherence
 
-
-from pulsepoint_ai.engines.chronic_scoring import evaluate_chronic_risk
-from pulsepoint_ai.core.schemas.triage import FeatureImportance, TopCondition
 
 def _max_tier(*tiers: SeverityTier) -> SeverityTier:
     rank = get_triage_rules()["tier_rank"]
@@ -44,23 +43,23 @@ async def run_triage(
 ) -> TriageAssessResponse:
     request_id = str(uuid.uuid4())
 
-    # 1. Evaluate safety vital rules (chronic BP and glucose thresholds)
+
     rule_tier, fired = vital_rules.evaluate_vitals(req.vitals)
     rules_fired = [f.rule_id for f in fired]
     rule_findings = [
         {"id": f.rule_id, "tier": f.tier.value, "message": f.message} for f in fired
     ]
 
-    # 2. Run deterministic chronic scoring (IDRS + Hypertension risk staging)
+
     risk_results = evaluate_chronic_risk(req.patient_profile, req.vitals, req.symptoms)
     classifier_tier: SeverityTier = risk_results["tier"]
 
-    # 3. Retrieve relevant guidelines for diabetes/hypertension
+
     query = "diabetes hypertension chronic screening guidelines " + " ".join(req.symptoms[:5])
     chunks = await retriever.search(query, top_k=5)
     chunks_payload = [c.model_dump() for c in chunks]
 
-    # 4. Call LLM Clinical Reasoner to generate explainable BRIEFING
+
     llm_out: dict[str, Any] = await reasoner.reason(
         symptoms=req.symptoms,
         vitals=req.vitals,
@@ -82,11 +81,11 @@ async def run_triage(
     reasoner_tier = SeverityTier(llm_out.get("severity", classifier_tier.value))
     final_tier = _max_tier(rule_tier, classifier_tier, reasoner_tier)
 
-    # 5. Run LightGBM Referral Adherence Prediction
+
     adherence_prob = infer_adherence.predict(req.patient_profile, req.symptoms, final_tier)
 
-    # 6. Overriding/Preserving Response Schemas
-    # Create TopConditions list using our robust calculations
+
+
     top_conditions = [
         TopCondition(
             name="Type 2 Diabetes Risk",
@@ -99,8 +98,8 @@ async def run_triage(
             prob=round(float(risk_results["hypertension_prob"]), 2),
         )
     ]
-    
-    # Optionally append obesity/metabolic syndrome if obesity is detected
+
+
     waist = risk_results["diabetes_breakdown"].get("waist_score", 0)
     if waist >= 20:
         top_conditions.append(
@@ -111,7 +110,7 @@ async def run_triage(
             )
         )
 
-    # Append Referral Non-Adherence Risk to top conditions list (Z75.3)
+
     top_conditions.append(
         TopCondition(
             name="Referral Non-Adherence Risk (Loss-to-Follow-Up)",
@@ -120,7 +119,7 @@ async def run_triage(
         )
     )
 
-    # Map IDRS components to SHAP feature importances
+
     feat_imp = [
         FeatureImportance(feature="Age Factor", shap=float(risk_results["diabetes_breakdown"]["age_score"])),
         FeatureImportance(feature="Waist Circumference", shap=float(risk_results["diabetes_breakdown"]["waist_score"])),
@@ -133,14 +132,12 @@ async def run_triage(
     deterministic_codes = {c.icd10 for c in top_conditions}
     guard = set_difference_guard(deterministic_codes, deterministic_codes)
 
-    # Format next_action with potential high-risk non-adherence warning
+
     action_str = next_action_for(final_tier)
-    adherence_warning = ""
     if adherence_prob >= 0.60:
         action_str += " [ALERT: High default risk - ASHA home visit required]"
-        adherence_warning = " ALERT: High referral default risk detected. Proactive CHW follow-up recommended."
 
-    # Incorporate default risk summary into doctor briefing if needed
+
     briefing = llm_out.get("doctor_briefing", f"Patient screened for chronic conditions. Type 2 Diabetes Risk score at {risk_results['diabetes_idrs']}/100. Hypertension Staging: {risk_results['hypertension_staging']}.")
     if adherence_prob >= 0.60:
         briefing += f" [ASHA Alert: Non-adherence risk is estimated at {adherence_prob*100:.0f}% due to accessibility constraints. Prioritize in-person visit.]"

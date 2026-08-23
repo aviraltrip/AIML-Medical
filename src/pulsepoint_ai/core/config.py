@@ -16,13 +16,13 @@ CONFIGS_DIR = REPO_ROOT / "configs"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", case_sensitive=False)
 
-    # Core AI Keys
+
     google_api_key: str | None = None
     openai_api_key: str | None = None
     openrouter_api_key: str | None = None
     hf_token: str | None = None
 
-    # Paths
+
     configs_dir: Path = Field(default=CONFIGS_DIR)
     data_dir: Path = Field(default=REPO_ROOT / "data")
     models_dir: Path = Field(default=REPO_ROOT / "models")

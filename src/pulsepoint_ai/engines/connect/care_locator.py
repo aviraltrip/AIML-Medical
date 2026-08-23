@@ -26,12 +26,11 @@ from pulsepoint_ai.core.schemas.care import (
     CareLocatorResponse,
     DoctorMatch,
 )
-from pulsepoint_ai.core.schemas.common import SeverityTier
 
 EARTH_RADIUS_KM = 6371.0
 
 
-# ---------- 1. Multi-label specialty mapper ----------------------------------
+
 def map_icd10_to_specialties(icd10_codes: list[str]) -> list[str]:
     """Multi-label mapping: each ICD-10 code resolves to its longest matching
     prefix in the config. Deduped while preserving first-seen order so the
@@ -40,7 +39,7 @@ def map_icd10_to_specialties(icd10_codes: list[str]) -> list[str]:
     mappings = cfg.get("specialty_mapping", [])
     default = cfg.get("default_specialty", "General Physician")
 
-    # Sort by prefix length DESC so longest-match wins (e.g., I21 beats I).
+
     sorted_map = sorted(mappings, key=lambda m: -len(m["prefix"]))
 
     seen: set[str] = set()
@@ -60,7 +59,7 @@ def map_icd10_to_specialties(icd10_codes: list[str]) -> list[str]:
     return ordered or [default]
 
 
-# ---------- 2. Geo distance ---------------------------------------------------
+
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Great-circle distance between two coordinates in kilometres."""
     lat1_r, lat2_r = math.radians(lat1), math.radians(lat2)
@@ -73,7 +72,7 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return EARTH_RADIUS_KM * 2 * math.asin(math.sqrt(a))
 
 
-# ---------- 3. Per-feature scoring -------------------------------------------
+
 def _relevance_tier(doctor_specialty: str, required: list[str], cfg: dict[str, Any]) -> int:
     """2 = exact match, 1 = generalist fallback, 0 = unrelated specialty.
 
@@ -150,7 +149,7 @@ def _score_doctor(
     return float(score), breakdown
 
 
-# ---------- 4. Pipeline entry-point ------------------------------------------
+
 def find_care(req: CareLocatorRequest) -> CareLocatorResponse:
     cfg = get_care_locator_config()
     catalog = get_doctors()
@@ -205,12 +204,12 @@ def find_care(req: CareLocatorRequest) -> CareLocatorResponse:
         )
 
     if drop_irrelevant and any(m.relevance_tier > 0 for m in matches):
-        # Only suppress unrelated specialists when at least one qualified match exists.
+
         matches = [m for m in matches if m.relevance_tier > 0]
 
     if sort_by == "distance":
-        # Specialty-first, then nearest. Prevents an unrelated specialist from
-        # outranking a slightly farther cardiologist on an MI emergency.
+
+
         matches.sort(key=lambda m: (-m.relevance_tier, m.distance_km, -m.score))
     else:
         matches.sort(key=lambda m: (-m.relevance_tier, -m.score, m.distance_km))
@@ -230,6 +229,6 @@ def find_care(req: CareLocatorRequest) -> CareLocatorResponse:
 
 __all__ = [
     "find_care",
-    "map_icd10_to_specialties",
     "haversine_km",
+    "map_icd10_to_specialties",
 ]

@@ -23,7 +23,7 @@ def symptom_to_index() -> dict[str, int]:
     return {name: i for i, name in enumerate(canonical_symptom_names())}
 
 
-def build_symptom_vector(symptoms: list[str]) -> np.ndarray:
+def build_symptom_vector(symptoms: list[str]) -> np.ndarray:  # type: ignore[type-arg]
     idx = symptom_to_index()
     vec = np.zeros(len(idx), dtype=np.float32)
     for s in symptoms:
@@ -32,7 +32,7 @@ def build_symptom_vector(symptoms: list[str]) -> np.ndarray:
     return vec
 
 
-def build_vitals_vector(vitals: Vitals) -> np.ndarray:
+def build_vitals_vector(vitals: Vitals) -> np.ndarray:  # type: ignore[type-arg]
     """Order: [spo2, bp_sys, bp_dia, sugar, pulse, temp, resp_rate]. NaN for missing."""
     return np.array(
         [
@@ -48,7 +48,7 @@ def build_vitals_vector(vitals: Vitals) -> np.ndarray:
     )
 
 
-def build_profile_vector(profile: PatientProfile) -> np.ndarray:
+def build_profile_vector(profile: PatientProfile) -> np.ndarray:  # type: ignore[type-arg]
     """Order: [age, gender_male, gender_female]."""
     return np.array(
         [
@@ -62,7 +62,7 @@ def build_profile_vector(profile: PatientProfile) -> np.ndarray:
 
 def build_full_feature_vector(
     symptoms: list[str], vitals: Vitals, profile: PatientProfile
-) -> np.ndarray:
+) -> np.ndarray:  # type: ignore[type-arg]
     return np.concatenate(
         [
             build_symptom_vector(symptoms),

@@ -24,13 +24,13 @@ import numpy as np
 
 OUTPUT_DIR = Path("models/disease_lgbm")
 RNG_SEED = 42
-N_SAMPLES_PER_DISEASE = 120  # 41 * 120 = 4920 (matches Kaggle dataset size)
-NOISE_PROB_OFF = 0.10        # 10% chance a typical symptom is dropped from a sample
-NOISE_PROB_ON = 0.02         # 2% chance an unrelated symptom is added
+N_SAMPLES_PER_DISEASE = 120
+NOISE_PROB_OFF = 0.10
+NOISE_PROB_ON = 0.02
 
 
-# 41 diseases x ICD-10 codes x typical symptom sets.
-# Symptom names are snake_case to match the common Kaggle format.
+
+
 DISEASES: dict[str, dict] = {
     "Fungal infection": {
         "icd10": "B49",
@@ -204,7 +204,7 @@ def _build_feature_space() -> list[str]:
     seen: set[str] = set()
     for d in DISEASES.values():
         seen.update(d["symptoms"])
-    # Pad to ~132 if needed by appending a small set of common 'distractor' symptoms
+
     distractors = [
         "abdominal_pain", "anxiety", "back_pain", "chest_pain", "chills", "cough", "diarrhoea",
         "dizziness", "fatigue", "fever", "headache", "high_fever", "joint_pain", "loss_of_appetite",
@@ -230,20 +230,20 @@ def _generate_dataset(rng: random.Random) -> tuple[np.ndarray, np.ndarray, list[
         not_typical = [s for s in feature_names if s not in typical]
         for _ in range(N_SAMPLES_PER_DISEASE):
             row = np.zeros(len(feature_names), dtype=np.float32)
-            # Activate typical symptoms (with small drop-out noise)
+
             for s in typical:
                 if rng.random() > NOISE_PROB_OFF:
                     row[feat_index[s]] = 1.0
-            # Sprinkle a small number of unrelated symptoms (noise)
+
             for s in not_typical:
                 if rng.random() < NOISE_PROB_ON:
                     row[feat_index[s]] = 1.0
             rows.append(row)
             labels.append(label_to_id[disease])
 
-    X = np.vstack(rows)
+    x = np.vstack(rows)
     y = np.array(labels, dtype=np.int32)
-    return X, y, feature_names, label_to_id
+    return x, y, feature_names, label_to_id
 
 
 def main() -> None:
@@ -252,16 +252,16 @@ def main() -> None:
     np.random.seed(RNG_SEED)
 
     print(f"Building dataset: {len(DISEASES)} diseases x {N_SAMPLES_PER_DISEASE} samples = {len(DISEASES) * N_SAMPLES_PER_DISEASE} rows")
-    X, y, feature_names, label_to_id = _generate_dataset(rng)
+    x, y, feature_names, label_to_id = _generate_dataset(rng)
     print(f"Feature space: {len(feature_names)} symptoms")
     print(f"Class space:   {len(label_to_id)} diseases")
 
-    # Shuffle so the trees don't overfit to the sequential class ordering
-    perm = np.random.permutation(len(X))
-    X, y = X[perm], y[perm]
+
+    perm = np.random.permutation(len(x))
+    x, y = x[perm], y[perm]
 
     print("Training LightGBM multiclass classifier...")
-    train_data = lgb.Dataset(X, label=y, feature_name=feature_names)
+    train_data = lgb.Dataset(x, label=y, feature_name=feature_names)
     params = {
         "objective": "multiclass",
         "num_class": len(label_to_id),
@@ -277,19 +277,19 @@ def main() -> None:
     }
     model = lgb.train(params, train_data, num_boost_round=120)
 
-    # Quick training-set accuracy sanity check
-    train_pred = np.argmax(model.predict(X), axis=1)
+
+    train_pred = np.argmax(model.predict(x), axis=1)
     acc = float(np.mean(train_pred == y))
     print(f"Training accuracy: {acc:.3f}")
 
-    # Persist artifacts
+
     model_path = OUTPUT_DIR / "model.txt"
     model.save_model(str(model_path))
 
     feature_names_path = OUTPUT_DIR / "feature_names.json"
     feature_names_path.write_text(json.dumps(feature_names, indent=2))
 
-    # Write label_map in {icd10: {id, name}} format that infer.py understands
+
     label_map: dict[str, dict] = {}
     for disease, idx in label_to_id.items():
         icd10 = DISEASES[disease]["icd10"]

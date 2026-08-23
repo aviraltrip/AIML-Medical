@@ -1,16 +1,17 @@
 """Rural Mode Utility: Handles adaptive AI routing for low-connectivity (2G)."""
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
-class NetworkTier(str, Enum):
-    BROADBAND = "broadband" # 4G/5G/WiFi
-    RURAL = "rural"        # 2G/3G/High Latency
-    OFFLINE = "offline"     # No connection
+
+class NetworkTier(StrEnum):
+    BROADBAND = "broadband"
+    RURAL = "rural"
+    OFFLINE = "offline"
 
 class AIRouter:
     """Smart router to switch between cloud LLMs and local lightweight models."""
-    
+
     def __init__(self, current_tier: NetworkTier = NetworkTier.BROADBAND):
         self.tier = current_tier
 
