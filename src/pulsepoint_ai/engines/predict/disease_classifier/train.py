@@ -18,17 +18,21 @@ from sklearn.model_selection import train_test_split
 from pulsepoint_ai.engines.triage.classifier.features import feature_names
 
 
-def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray, list[str]]:
+def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray, list[str]]:  # type: ignore[type-arg]
     df = pd.read_parquet(path)
     labels = sorted(df["icd10"].unique())
     label_map = {label: i for i, label in enumerate(labels)}
     y = df["icd10"].map(label_map).to_numpy()
     feat_cols = [c for c in df.columns if c not in {"icd10", "name"}]
-    X = df[feat_cols].to_numpy(dtype=np.float32)
-    return X, y, labels
+    x = df[feat_cols].to_numpy(dtype=np.float32)
+    return x, y, labels
 
 
-def train_model(X: np.ndarray, y: np.ndarray, n_classes: int) -> lgb.Booster:
+def train_model(
+    x: np.ndarray,  # type: ignore[type-arg]
+    y: np.ndarray,  # type: ignore[type-arg]
+    n_classes: int,
+) -> lgb.Booster:
     params = {
         "objective": "multiclass",
         "num_class": n_classes,
@@ -42,9 +46,9 @@ def train_model(X: np.ndarray, y: np.ndarray, n_classes: int) -> lgb.Booster:
         "verbose": -1,
         "seed": 42,
     }
-    X_tr, X_val, y_tr, y_val = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
-    d_train = lgb.Dataset(X_tr, label=y_tr)
-    d_val = lgb.Dataset(X_val, label=y_val, reference=d_train)
+    x_tr, x_val, y_tr, y_val = train_test_split(x, y, test_size=0.2, stratify=y, random_state=42)
+    d_train = lgb.Dataset(x_tr, label=y_tr)
+    d_val = lgb.Dataset(x_val, label=y_val, reference=d_train)
     booster = lgb.train(
         params,
         d_train,
@@ -61,15 +65,15 @@ def main() -> None:
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
 
-    X, y, labels = load_dataset(args.data)
-    booster = train_model(X, y, len(labels))
+    x, y, labels = load_dataset(args.data)
+    booster = train_model(x, y, len(labels))
 
-    proba = booster.predict(X)
+    proba = booster.predict(x)
     metrics = {
         "top1_acc": float(top_k_accuracy_score(y, proba, k=1, labels=range(len(labels)))),
         "top5_acc": float(top_k_accuracy_score(y, proba, k=5, labels=range(len(labels)))),
-        "n_samples": int(len(y)),
-        "n_classes": int(len(labels)),
+        "n_samples": len(y),
+        "n_classes": len(labels),
     }
 
     args.out.mkdir(parents=True, exist_ok=True)

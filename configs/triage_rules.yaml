@@ -1,10 +1,6 @@
-# Hardcoded vital-sign safety rails. LLM CANNOT override.
-# Source: WHO Emergency Triage + MOHFW + NHS pathways.
-# Validated by clinical reviewer (see docs/clinical-validation.md).
 
 version: v0.1.0
 
-# Tier rank order (higher = more severe). Used to take max across rules.
 tier_rank:
   LOW: 0
   MEDIUM: 1

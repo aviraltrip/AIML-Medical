@@ -20,7 +20,7 @@ NEXT_ACTION_BY_TIER: dict[SeverityTier, str] = {
     SeverityTier.EMERGENCY: "immediate PHC referral required due to crisis-level screening values",
 }
 
-# Patterns the LLM is never allowed to emit. Strip or block.
+
 _BANNED_OUTPUT_PATTERNS = [
     re.compile(r"\btake\s+\d+\s*(mg|g|ml)\b", re.IGNORECASE),
     re.compile(r"\bprescribe\b", re.IGNORECASE),

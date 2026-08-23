@@ -1,11 +1,11 @@
+import asyncio
 import os
 import sys
-import asyncio
 
-# Ensure the src directory is in the path
 sys.path.append(os.path.join(os.getcwd(), "src"))
 
 from pulsepoint_ai.engines.triage.rag.ingest import ingest_all
+
 
 async def main():
     try:

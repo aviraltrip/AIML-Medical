@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -8,7 +8,7 @@ from pulsepoint_ai.core.schemas.common import Gender
 from pulsepoint_ai.core.schemas.triage import HallucinationCheck
 
 
-class LabStatus(str, Enum):
+class LabStatus(StrEnum):
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"

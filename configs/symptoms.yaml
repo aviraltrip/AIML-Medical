@@ -1,11 +1,7 @@
-# Canonical symptom vocabulary. Frontend MUST send canonical names.
-# Hi/Hinglish synonyms are normalized server-side before any model call.
-# This file is the single source of truth for the 130+ symptom feature vector.
 
 version: v0.1.0
 
 symptoms:
-  # Cardiovascular
   - name: chest_pain
     display: "Chest pain"
     synonyms: ["सीने में दर्द", "seene me dard", "chati me dard"]
@@ -20,7 +16,6 @@ symptoms:
   - name: chest_tightness
     display: "Chest tightness"
 
-  # Respiratory
   - name: shortness_of_breath
     display: "Shortness of breath"
     synonyms: ["saans phoolna", "saans lene me takleef"]
@@ -33,7 +28,6 @@ symptoms:
   - name: wheezing
     display: "Wheezing"
 
-  # Neurological
   - name: headache
     display: "Headache"
     synonyms: ["sir dard"]
@@ -65,7 +59,6 @@ symptoms:
   - name: numbness_tingling
     display: "Numbness or tingling"
 
-  # Gastrointestinal
   - name: abdominal_pain
     display: "Abdominal pain"
     synonyms: ["pet dard"]
@@ -95,7 +88,6 @@ symptoms:
   - name: loss_of_appetite
     display: "Loss of appetite"
 
-  # General / constitutional
   - name: fever
     display: "Fever"
     synonyms: ["bukhar"]
@@ -123,7 +115,6 @@ symptoms:
   - name: dehydration
     display: "Signs of dehydration"
 
-  # Musculoskeletal
   - name: back_pain
     display: "Back pain"
   - name: joint_pain
@@ -142,7 +133,6 @@ symptoms:
   - name: leg_pain_one_sided
     display: "One-sided leg pain"
 
-  # ENT
   - name: sore_throat
     display: "Sore throat"
     synonyms: ["gale me dard"]
@@ -161,7 +151,6 @@ symptoms:
   - name: epistaxis
     display: "Nosebleed"
 
-  # Skin
   - name: rash
     display: "Skin rash"
   - name: rash_purpuric
@@ -179,7 +168,6 @@ symptoms:
   - name: skin_ulcer
     display: "Skin ulcer"
 
-  # Urinary / renal
   - name: dysuria
     display: "Painful urination"
   - name: hematuria
@@ -195,7 +183,6 @@ symptoms:
   - name: flank_pain
     display: "Flank pain"
 
-  # Reproductive (female)
   - name: vaginal_bleeding_abnormal
     display: "Abnormal vaginal bleeding"
   - name: pelvic_pain
@@ -205,13 +192,11 @@ symptoms:
   - name: discharge_abnormal
     display: "Abnormal discharge"
 
-  # Reproductive (male)
   - name: testicular_pain
     display: "Testicular pain"
   - name: erectile_dysfunction
     display: "Erectile dysfunction"
 
-  # Psychiatric / mood
   - name: anxiety
     display: "Anxiety"
   - name: depression_low_mood
@@ -227,7 +212,6 @@ symptoms:
   - name: panic
     display: "Panic episode"
 
-  # Endocrine
   - name: heat_intolerance
     display: "Heat intolerance"
   - name: cold_intolerance
@@ -237,7 +221,6 @@ symptoms:
   - name: hair_loss
     display: "Hair loss"
 
-  # Allergy / immune
   - name: anaphylaxis_signs
     display: "Anaphylaxis signs"
   - name: throat_swelling
@@ -247,7 +230,6 @@ symptoms:
   - name: lip_swelling
     display: "Lip swelling"
 
-  # Pediatric specific
   - name: poor_feeding_infant
     display: "Poor feeding (infant)"
   - name: lethargy_infant
@@ -257,7 +239,6 @@ symptoms:
   - name: febrile_seizure
     display: "Febrile seizure"
 
-  # Trauma / acute
   - name: head_injury
     display: "Head injury"
   - name: loss_of_consciousness
@@ -269,7 +250,6 @@ symptoms:
   - name: fracture_suspected
     display: "Suspected fracture"
 
-  # Sensory / red flags
   - name: photophobia
     display: "Light sensitivity"
   - name: phonophobia
@@ -277,7 +257,6 @@ symptoms:
   - name: aura
     display: "Aura before headache"
 
-  # Cardio red flags
   - name: orthopnea
     display: "Trouble breathing when lying flat"
   - name: pnd
@@ -287,13 +266,11 @@ symptoms:
   - name: edema_face
     display: "Facial swelling"
 
-  # GI red flags
   - name: rebound_tenderness
     display: "Rebound abdominal tenderness"
   - name: rigid_abdomen
     display: "Rigid abdomen"
 
-  # Misc
   - name: difficulty_swallowing
     display: "Difficulty swallowing"
   - name: hoarseness

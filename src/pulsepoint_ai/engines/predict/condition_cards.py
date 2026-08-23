@@ -5,8 +5,8 @@ import uuid
 from typing import Any
 
 from pulsepoint_ai.core.schemas.predict import ConditionCardRequest, ConditionCardResponse
-from pulsepoint_ai.llm.client import LLMClient
 from pulsepoint_ai.engines.triage.rag.retriever import Retriever
+from pulsepoint_ai.llm.client import LLMClient
 
 _retriever_singleton: Retriever | None = None
 

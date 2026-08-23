@@ -26,8 +26,6 @@ from dataclasses import dataclass
 
 from pulsepoint_ai.core.config import get_symptoms
 
-# Negation pre-cues — must appear within the negation window to the LEFT of
-# the symptom phrase. Multi-word cues are matched as exact token sequences.
 _NEGATION_CUES: tuple[str, ...] = (
     "no history of",
     "no sign of",
@@ -63,8 +61,8 @@ _NEGATION_CUES: tuple[str, ...] = (
     "w/o",
 )
 
-# Clause-breakers that close the negation scope (so "no fever, but headache"
-# does NOT mark headache as negated).
+
+
 _TERMINATORS: tuple[str, ...] = (
     "but",
     "however",
@@ -76,19 +74,19 @@ _TERMINATORS: tuple[str, ...] = (
     "whereas",
 )
 
-# Window (in tokens) within which a negation cue is allowed to scope.
+
 _NEGATION_WINDOW_TOKENS = 6
 
-# Sentence splitter. Keeps the splitter character out of the returned chunks.
+
 _SENT_SPLIT_RE = re.compile(r"(?<=[.!?;\n])\s+|(?<=[.!?;])\n+")
 
 
 @dataclass(frozen=True)
 class SymptomMatch:
-    canonical: str       # e.g. "hemoptysis"
-    phrase: str          # the exact text matched, e.g. "blood cough"
+    canonical: str
+    phrase: str
     negated: bool
-    sentence: str        # the surrounding sentence for transparency
+    sentence: str
 
 
 def _build_phrase_index() -> list[tuple[str, str]]:
@@ -99,23 +97,23 @@ def _build_phrase_index() -> list[tuple[str, str]]:
     pairs: list[tuple[str, str]] = []
     for entry in cfg.get("symptoms", []):
         canonical = entry["name"]
-        # Always match the canonical snake_case (de-snaked + raw)
+
         pairs.append((canonical.replace("_", " ").lower(), canonical))
         pairs.append((canonical.lower(), canonical))
         if entry.get("display"):
             pairs.append((entry["display"].lower(), canonical))
         for syn in entry.get("synonyms", []) or []:
             pairs.append((syn.lower(), canonical))
-    # Dedupe while preserving first-seen mapping
+
     seen: dict[str, str] = {}
     for phrase, canonical in pairs:
         if phrase and phrase not in seen:
             seen[phrase] = canonical
-    # Sort descending by length so multi-word phrases match before substrings.
+
     return sorted(seen.items(), key=lambda kv: -len(kv[0]))
 
 
-# Cache the index — symptoms.yaml is static at runtime.
+
 _PHRASE_INDEX: list[tuple[str, str]] | None = None
 
 
@@ -141,23 +139,23 @@ def _is_negated(sentence_lower: str, match_start: int) -> bool:
     if not left:
         return False
 
-    # Tokenize the left context (simple whitespace+punct split).
+
     left_tokens = re.findall(r"[a-z0-9'/]+", left)
     if not left_tokens:
         return False
 
-    # Walk backwards up to the window size, but bail out on terminators first.
+
     window = left_tokens[-_NEGATION_WINDOW_TOKENS:]
-    # If a terminator appears inside the window, drop everything to its left:
+
     for i in range(len(window) - 1, -1, -1):
         if window[i] in _TERMINATORS:
             window = window[i + 1:]
             break
 
-    # Reconstruct windowed-left as a single phrase to match multi-word cues.
+
     windowed_phrase = " ".join(window)
     for cue in _NEGATION_CUES:
-        # Cue must appear as a whole-word run at any position in the window.
+
         if re.search(rf"(?:^|\s){re.escape(cue)}(?:\s|$)", windowed_phrase):
             return True
     return False
@@ -179,17 +177,14 @@ def extract_symptoms(text: str) -> dict:
     index = _phrase_index()
     text_lc = text.lower()
 
-    # Track character spans we've already consumed (longest-match-wins).
+
     consumed: list[tuple[int, int]] = []
 
     def overlaps(start: int, end: int) -> bool:
-        for s, e in consumed:
-            if start < e and end > s:
-                return True
-        return False
+        return any(start < e and end > s for s, e in consumed)
 
     sentences = _split_sentences(text)
-    # Compute sentence offsets so we can locate each match's sentence.
+
     sentence_spans: list[tuple[int, int, str]] = []
     cursor = 0
     for sent in sentences:
@@ -202,7 +197,7 @@ def extract_symptoms(text: str) -> dict:
     matches: list[SymptomMatch] = []
 
     for phrase, canonical in index:
-        # Word-boundary search across the full text.
+
         pat = re.compile(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", re.IGNORECASE)
         for m in pat.finditer(text_lc):
             start, end = m.start(), m.end()
@@ -210,7 +205,7 @@ def extract_symptoms(text: str) -> dict:
                 continue
             consumed.append((start, end))
 
-            # Find the sentence this match falls in.
+
             sentence = text[start:end]
             sentence_local_start = 0
             for s_start, s_end, s_text in sentence_spans:
@@ -229,7 +224,7 @@ def extract_symptoms(text: str) -> dict:
                 )
             )
 
-    # Order matches by their appearance in the original text.
+
     matches.sort(key=lambda mm: text_lc.find(mm.phrase.lower()))
 
     seen_pos: set[str] = set()
@@ -245,8 +240,8 @@ def extract_symptoms(text: str) -> dict:
             if mm.canonical not in seen_pos:
                 seen_pos.add(mm.canonical)
                 symptoms.append(mm.canonical)
-                # If this canonical was previously marked negated (a later
-                # positive mention overrides), drop from negated.
+
+
                 if mm.canonical in seen_neg:
                     negated_list = [n for n in negated_list if n != mm.canonical]
                     seen_neg.discard(mm.canonical)

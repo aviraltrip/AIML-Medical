@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from pulsepoint_ai.core.schemas.common import PatientProfile
 
 
-class AnswerType(str, Enum):
+class AnswerType(StrEnum):
     YES_NO = "yes_no"
     SCALE = "scale"
     FREE_TEXT = "free_text"

@@ -1,5 +1,3 @@
-# Clinical Knowledge Base for Lab Tests
-# Used to ground LLM explanations and prevent medical hallucinations.
 
 hemoglobin:
   description: "A protein in red blood cells that carries oxygen throughout your body."

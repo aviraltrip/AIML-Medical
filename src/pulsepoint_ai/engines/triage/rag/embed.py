@@ -1,17 +1,19 @@
 """Gemini Text Embedding wrapper (text-embedding-004)."""
 from __future__ import annotations
 
-import numpy as np
 import google.generativeai as genai
+import numpy as np
+
 from pulsepoint_ai.core.config import get_models_config, get_settings
+
 
 class Embedder:
     def __init__(self) -> None:
         cfg = get_models_config()["embedding"]
         self.model = cfg["model"]
         self.dim = cfg["dim"]
-        
-        # Initialize Gemini
+
+
         genai.configure(api_key=get_settings().google_api_key)
 
     async def embed_one(self, text: str) -> np.ndarray:
@@ -31,9 +33,9 @@ class Embedder:
         """Batch processes multiple strings into a 2D numpy array."""
         if not texts:
             return np.zeros((0, self.dim), dtype=np.float32)
-            
+
         try:
-            # Gemini supports batch embedding natively
+
             result = genai.embed_content(
                 model=self.model,
                 content=texts,

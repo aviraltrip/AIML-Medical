@@ -1,5 +1,6 @@
-import google.generativeai as genai
 import os
+
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,8 +17,8 @@ try:
     for m in genai.list_models():
         if 'generateContent' in m.supported_generation_methods:
             print(f"Found model: {m.name}")
-            
-    # Try a simple generation with the most likely model
+
+
     model = genai.GenerativeModel('gemini-flash-latest')
     response = model.generate_content("Say hello!")
     print(f"Success! Response: {response.text}")

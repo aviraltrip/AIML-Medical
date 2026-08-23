@@ -62,7 +62,7 @@ async def ingest_all() -> None:
 
     all_chunks: list[dict] = []
 
-    # 1. Process Remote Sources
+
     for src in sources:
         if src["type"] not in {"pdf", "html"}:
             continue
@@ -91,17 +91,17 @@ async def ingest_all() -> None:
                 }
             )
 
-    # 2. Process Local Raw Sources
+
     if RAW_DIR.exists():
         for file_path in RAW_DIR.glob("*"):
             if file_path.suffix.lower() not in {".md", ".txt"}:
                 continue
-            
+
             print(f"Ingesting local file: {file_path.name}...")
             text = file_path.read_text(encoding="utf-8")
             if not text:
                 continue
-                
+
             sid = f"local_{file_path.stem}"
             for chunk in chunk_text(
                 text,

@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import lightgbm as lgb
 import numpy as np
@@ -23,21 +24,21 @@ from pulsepoint_ai.engines.triage.classifier.features import feature_names
 SEVERITY_LABELS = ["LOW", "MEDIUM", "HIGH", "URGENT", "EMERGENCY"]
 
 
-def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray]:
+def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray]:  # type: ignore[type-arg]
     df = pd.read_parquet(path)
     label_map = {label: i for i, label in enumerate(SEVERITY_LABELS)}
     y = df["severity"].map(label_map).to_numpy()
     feat_cols = [c for c in df.columns if c != "severity"]
-    X = df[feat_cols].to_numpy(dtype=np.float32)
-    return X, y
+    x = df[feat_cols].to_numpy(dtype=np.float32)
+    return x, y
 
 
 def train(
-    X: np.ndarray,
-    y: np.ndarray,
+    x: np.ndarray,  
+    y: np.ndarray,  
     n_splits: int = 5,
     seed: int = 42,
-) -> tuple[lgb.Booster, dict]:
+) -> tuple[lgb.Booster, dict[str, Any]]:
     params = {
         "objective": "multiclass",
         "num_class": len(SEVERITY_LABELS),
@@ -53,10 +54,10 @@ def train(
     }
 
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
-    fold_f1s = []
-    for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
-        d_train = lgb.Dataset(X[train_idx], label=y[train_idx])
-        d_val = lgb.Dataset(X[val_idx], label=y[val_idx], reference=d_train)
+    fold_f1s: list[float] = []
+    for _, (train_idx, val_idx) in enumerate(skf.split(x, y)):
+        d_train = lgb.Dataset(x[train_idx], label=y[train_idx])
+        d_val = lgb.Dataset(x[val_idx], label=y[val_idx], reference=d_train)
         booster = lgb.train(
             params,
             d_train,
@@ -64,24 +65,24 @@ def train(
             valid_sets=[d_val],
             callbacks=[lgb.early_stopping(30), lgb.log_evaluation(0)],
         )
-        preds = booster.predict(X[val_idx]).argmax(axis=1)
+        preds = np.asarray(booster.predict(x[val_idx])).argmax(axis=1)
         f1 = f1_score(y[val_idx], preds, average="macro")
         fold_f1s.append(f1)
 
-    # Final fit on full data
-    d_full = lgb.Dataset(X, label=y)
+
+    d_full = lgb.Dataset(x, label=y)
     final = lgb.train(params, d_full, num_boost_round=500)
 
     metrics = {
         "cv_macro_f1_mean": float(np.mean(fold_f1s)),
         "cv_macro_f1_std": float(np.std(fold_f1s)),
-        "n_samples": int(len(y)),
-        "n_features": int(X.shape[1]),
+        "n_samples": len(y),
+        "n_features": x.shape[1],
         "label_distribution": {
             SEVERITY_LABELS[i]: int((y == i).sum()) for i in range(len(SEVERITY_LABELS))
         },
         "report": classification_report(
-            y, final.predict(X).argmax(axis=1), target_names=SEVERITY_LABELS, output_dict=True
+            y, np.asarray(final.predict(x)).argmax(axis=1), target_names=SEVERITY_LABELS, output_dict=True
         ),
     }
     return final, metrics
@@ -93,8 +94,8 @@ def main() -> None:
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
 
-    X, y = load_dataset(args.data)
-    booster, metrics = train(X, y)
+    x, y = load_dataset(args.data)
+    booster, metrics = train(x, y)
 
     args.out.mkdir(parents=True, exist_ok=True)
     booster.save_model(str(args.out / "model.txt"))

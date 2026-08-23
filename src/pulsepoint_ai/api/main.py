@@ -1,10 +1,9 @@
+import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import structlog
-from pulsepoint_ai.api.routers import triage, predict, connect
-from pulsepoint_ai.core.config import get_settings
 
-# Configure logging
+from pulsepoint_ai.api.routers import connect, predict, triage
+
 logger = structlog.get_logger()
 
 app = FastAPI(
@@ -13,16 +12,16 @@ app = FastAPI(
     version="3.0.0"
 )
 
-# Enable CORS for Next.js integration
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with your Next.js domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include Routers
+
 app.include_router(triage.router, prefix="/api/v1/triage", tags=["Triage"])
 app.include_router(predict.router, prefix="/api/v1/predict", tags=["Predict"])
 app.include_router(connect.router, prefix="/api/v1/connect", tags=["Connect"])

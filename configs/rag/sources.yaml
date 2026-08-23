@@ -1,5 +1,3 @@
-# Whitelisted clinical guideline sources for the RAG knowledge base.
-# All ingestion is rate-limited and respects robots.txt.
 
 version: v1.0.0
 
