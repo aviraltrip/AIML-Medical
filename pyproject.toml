@@ -89,3 +89,7 @@ exclude = ["data", "models"]
 [tool.coverage.run]
 source = ["src/pulsepoint_ai"]
 omit = ["*/scripts/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
