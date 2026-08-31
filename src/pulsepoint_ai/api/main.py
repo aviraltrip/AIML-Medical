@@ -1,10 +1,10 @@
-import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from pulsepoint_ai.core.logging import get_logger
 from pulsepoint_ai.api.routers import connect, predict, triage
 
-logger = structlog.get_logger()
+logger = get_logger("pulsepoint_ai.api")
 
 app = FastAPI(
     title="PulsePoint AI Engine",

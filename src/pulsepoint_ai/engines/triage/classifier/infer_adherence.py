@@ -156,3 +156,88 @@ def predict(
     severity_tier: SeverityTier
 ) -> float:
     return adherence_classifier.predict_default_risk(profile, symptoms, severity_tier)
+
+
+def score_adherence_risk(
+    patient: dict | PatientProfile,
+    symptoms: list[str] | None = None,
+    severity_tier: SeverityTier = SeverityTier.LOW
+) -> float:
+    """Scores adherence risk for a patient dictionary or PatientProfile."""
+    if isinstance(patient, dict):
+        raw_dist = patient.get("distance_to_phc_km")
+        if raw_dist is None:
+            raw_dist = patient.get("distance_to_phc", 5.0)
+        distance = float(raw_dist) if raw_dist is not None else 5.0
+
+        farming = 1.0 if patient.get("occupation") == "farming" or patient.get("farmer") else 0.0
+        laborer = 1.0 if patient.get("daily_wage_earner") or patient.get("laborer") or patient.get("occupation") == "laborer" else 0.0
+        tobacco_alcohol = 1.0 if patient.get("tobacco_alcohol_usage") or patient.get("substance_use") else 0.0
+
+        sev = patient.get("severity", severity_tier)
+        severity_map = {
+            SeverityTier.LOW: 0.0,
+            SeverityTier.MEDIUM: 1.0,
+            SeverityTier.HIGH: 2.0,
+            SeverityTier.URGENT: 3.0,
+            SeverityTier.EMERGENCY: 4.0
+        }
+        severity_val = severity_map.get(sev, 0.0) if isinstance(sev, SeverityTier) else float(sev or 0.0)
+
+        prev_default = patient.get("previous_default", False)
+        prev_adh = patient.get("previous_adherence")
+        if prev_adh is not None:
+            previous_adherence = float(prev_adh)
+        elif prev_default:
+            previous_adherence = 0.0
+        else:
+            previous_adherence = 1.0
+
+        raw_age = patient.get("age", 45)
+        age = float(raw_age) if raw_age is not None else 45.0
+
+        feats = {
+            "age": age,
+            "distance_to_phc": distance,
+            "occupation_farming": farming,
+            "occupation_laborer": laborer,
+            "tobacco_alcohol_usage": tobacco_alcohol,
+            "severity_tier_val": severity_val,
+            "previous_adherence": previous_adherence
+        }
+
+        adherence_classifier._load()
+        if not adherence_classifier._model or not adherence_classifier._feature_names:
+            z = (
+                -1.2
+                + 0.12 * feats["distance_to_phc"]
+                + 0.65 * feats["occupation_farming"]
+                + 0.80 * feats["occupation_laborer"]
+                + 0.35 * feats["tobacco_alcohol_usage"]
+                - 0.55 * feats["severity_tier_val"]
+                - 1.50 * feats["previous_adherence"]
+                + 0.008 * (feats["age"] - 45)
+            )
+            return float(1.0 / (1.0 + np.exp(-z)))
+
+        x = np.zeros((1, len(adherence_classifier._feature_names)), dtype=np.float32)
+        for i, name in enumerate(adherence_classifier._feature_names):
+            x[0, i] = feats.get(name, 0.0)
+
+        try:
+            return float(adherence_classifier._model.predict(x)[0])
+        except Exception:
+            z = (
+                -1.2
+                + 0.12 * feats["distance_to_phc"]
+                + 0.65 * feats["occupation_farming"]
+                + 0.80 * feats["occupation_laborer"]
+                + 0.35 * feats["tobacco_alcohol_usage"]
+                - 0.55 * feats["severity_tier_val"]
+                - 1.50 * feats["previous_adherence"]
+                + 0.008 * (feats["age"] - 45)
+            )
+            return float(1.0 / (1.0 + np.exp(-z)))
+
+    return adherence_classifier.predict_default_risk(patient, symptoms or [], severity_tier)
+

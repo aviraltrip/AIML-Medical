@@ -10,6 +10,8 @@ def test_inference():
 
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+    if tokenizer is None:
+        raise ValueError(f"Failed to load tokenizer from {MODEL_PATH}")
 
 
     model = AutoModelForSeq2SeqLM.from_pretrained(BASE_MODEL)

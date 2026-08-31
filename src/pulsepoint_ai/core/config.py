@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     configs_dir: Path = Field(default=CONFIGS_DIR)
     data_dir: Path = Field(default=REPO_ROOT / "data")
     models_dir: Path = Field(default=REPO_ROOT / "models")
+    app_log_level: str = "INFO"
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
