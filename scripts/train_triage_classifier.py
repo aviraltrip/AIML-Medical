@@ -259,7 +259,7 @@ def main() -> None:
         "n_classes": len(SEVERITY_LABELS),
         "train_accuracy": train_acc,
         "val_accuracy": val_acc,
-        "best_iteration": int(model.best_iteration or 0),
+        "best_iteration": model.best_iteration or 0,
         "per_tier_accuracy": per_tier,
         "seed": RNG_SEED,
     }
