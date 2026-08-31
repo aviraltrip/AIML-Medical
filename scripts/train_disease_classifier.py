@@ -278,7 +278,7 @@ def main() -> None:
     model = lgb.train(params, train_data, num_boost_round=120)
 
 
-    train_pred = np.asarray(model.predict(X)).argmax(axis=1)
+    train_pred = np.asarray(model.predict(x)).argmax(axis=1)
     acc = float(np.mean(train_pred == y))
     print(f"Training accuracy: {acc:.3f}")
 
