@@ -15,7 +15,6 @@ from typing import Any
 
 import lightgbm as lgb
 import numpy as np
-from numpy.typing import NDArray
 import pandas as pd
 from sklearn.metrics import classification_report, f1_score
 from sklearn.model_selection import StratifiedKFold
@@ -25,7 +24,7 @@ from pulsepoint_ai.engines.triage.classifier.features import feature_names
 SEVERITY_LABELS = ["LOW", "MEDIUM", "HIGH", "URGENT", "EMERGENCY"]
 
 
-def load_dataset(path: Path) -> tuple[NDArray[np.float32], NDArray[np.int64]]:
+def load_dataset(path: Path) -> tuple[Any, Any]:
     df = pd.read_parquet(path)
     label_map = {label: i for i, label in enumerate(SEVERITY_LABELS)}
     y = df["severity"].map(label_map).to_numpy(dtype=np.int64)
@@ -35,8 +34,8 @@ def load_dataset(path: Path) -> tuple[NDArray[np.float32], NDArray[np.int64]]:
 
 
 def train(
-    x: NDArray[np.float32],
-    y: NDArray[np.int64],
+    x: Any,
+    y: Any,
     n_splits: int = 5,
     seed: int = 42,
 ) -> tuple[lgb.Booster, dict[str, Any]]:
