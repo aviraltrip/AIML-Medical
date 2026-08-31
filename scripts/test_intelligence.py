@@ -4,8 +4,8 @@ import sys
 
 sys.path.append(os.path.join(os.getcwd(), "src"))
 
-from pulsepoint_ai.engines.predict.trends import analyze_trend
-
+from pulsepoint_ai.engines.triage.classifier.infer_adherence import score_adherence_risk
+from pulsepoint_ai.core.schemas.common import SeverityTier
 from pulsepoint_ai.engines.connect.translation import translator
 
 
@@ -14,15 +14,18 @@ async def run_intelligence_test():
     print("PULSEPOINT INTELLIGENCE TEST")
     print("="*50)
 
-
-    print("\n[TEST 1] Trend Intelligence (Blood Sugar)")
-
-    sugar_data = [95, 105, 120, 140]
-    result = analyze_trend("Blood Sugar", sugar_data, higher_is_better=False)
-
-    print(f"Data: {sugar_data}")
-    print(f"Result: {result.direction.upper()}")
-    print(f"Message: {result.message}")
+    # --- TEST 1: ADHERENCE RISK INTELLIGENCE ---
+    print("\n[TEST 1] Referral Adherence Risk Scoring")
+    sample_patient = {
+        "distance_to_phc_km": 14.5,
+        "daily_wage_earner": True,
+        "previous_default": True,
+        "severity": SeverityTier.HIGH,
+        "age": 52,
+    }
+    adherence_prob = score_adherence_risk(sample_patient)
+    print(f"Patient Profile: {sample_patient}")
+    print(f"Adherence Default Risk Probability: {adherence_prob:.2f}")
 
 
     print("\n" + "-"*30)
