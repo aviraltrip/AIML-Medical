@@ -115,7 +115,7 @@ async def run_triage(
         TopCondition(
             name="Referral Non-Adherence Risk (Loss-to-Follow-Up)",
             icd10="Z75.3",
-            prob=round(float(adherence_prob), 2),
+            prob=round(adherence_prob, 2),
         )
     )
 
