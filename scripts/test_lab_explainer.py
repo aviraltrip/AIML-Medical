@@ -1,8 +1,8 @@
 import asyncio
 import os
 
-from pulsepoint_ai.predict.lab_detector import detect_labs
-from pulsepoint_ai.predict.lab_explainer import explain_flags
+from pulsepoint_ai.engines.predict.lab_detector import detect_labs
+from pulsepoint_ai.engines.predict.lab_explainer import explain_flags
 
 from pulsepoint_ai.core.schemas.common import Gender
 from pulsepoint_ai.llm.client import LLMClient
