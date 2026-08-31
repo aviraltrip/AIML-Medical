@@ -164,7 +164,7 @@ class SymptomInterviewer:
             asked = {a.question.strip().lower() for a in answered}
             if response.lower() in asked:
                 return None
-            return response
+            return str(response)
         except Exception as e:
             print(f"Interviewer LoRA inference failed: {e}.")
             return None
