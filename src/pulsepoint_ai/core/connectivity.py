@@ -1,10 +1,10 @@
 """Rural Mode Utility: Handles adaptive AI routing for low-connectivity (2G)."""
 from __future__ import annotations
 
-from enum import StrEnum
+from enum import Enum
 
 
-class NetworkTier(StrEnum):
+class NetworkTier(str, Enum):
     BROADBAND = "broadband"
     RURAL = "rural"
     OFFLINE = "offline"
