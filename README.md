@@ -79,11 +79,11 @@ python main.py
 ### 2. Run Verification Tests
 To run the chronic refactor test suite covering calculations, parsing, ML classifiers, and API contracts:
 ```bash
-# Windows
-$env:PYTHONPATH=".;src"; .venv\Scripts\python.exe tests/run_tests.py
+# Run standalone test runner
+python tests/run_tests.py
 
-# Linux / macOS
-PYTHONPATH=.:src .venv/bin/python tests/run_tests.py
+# Or run with pytest
+pytest
 ```
 
 ### 3. Re-Train Adherence Model
