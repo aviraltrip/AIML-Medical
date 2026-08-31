@@ -15,6 +15,7 @@ from typing import Any
 
 import lightgbm as lgb
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 from sklearn.metrics import classification_report, f1_score
 from sklearn.model_selection import StratifiedKFold
@@ -24,7 +25,7 @@ from pulsepoint_ai.engines.triage.classifier.features import feature_names
 SEVERITY_LABELS = ["LOW", "MEDIUM", "HIGH", "URGENT", "EMERGENCY"]
 
 
-def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray]:  # type: ignore[type-arg]
+def load_dataset(path: Path) -> tuple[NDArray[np.float32], NDArray[np.int64]]:
     df = pd.read_parquet(path)
     label_map = {label: i for i, label in enumerate(SEVERITY_LABELS)}
     y = df["severity"].map(label_map).to_numpy(dtype=np.int64)
@@ -34,8 +35,8 @@ def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray]:  # type: ignore[t
 
 
 def train(
-    x: np.ndarray,  
-    y: np.ndarray,  
+    x: NDArray[np.float32],
+    y: NDArray[np.int64],
     n_splits: int = 5,
     seed: int = 42,
 ) -> tuple[lgb.Booster, dict[str, Any]]:
@@ -66,7 +67,7 @@ def train(
             callbacks=[lgb.early_stopping(30), lgb.log_evaluation(0)],
         )
         preds = np.asarray(booster.predict(x[val_idx])).argmax(axis=1)
-        f1 = f1_score(y[val_idx], preds, average="macro")
+        f1 = float(f1_score(y[val_idx], preds, average="macro"))
         fold_f1s.append(f1)
 
 
