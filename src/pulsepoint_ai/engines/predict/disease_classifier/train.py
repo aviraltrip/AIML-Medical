@@ -20,9 +20,9 @@ from pulsepoint_ai.engines.triage.classifier.features import feature_names
 
 def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray, list[str]]:  # type: ignore[type-arg]
     df = pd.read_parquet(path)
-    labels = sorted(df["icd10"].unique())
+    labels = [str(lbl) for lbl in sorted(df["icd10"].unique())]
     label_map = {label: i for i, label in enumerate(labels)}
-    y = df["icd10"].map(label_map).to_numpy()
+    y = df["icd10"].map(label_map).to_numpy(dtype=np.int64)
     feat_cols = [c for c in df.columns if c not in {"icd10", "name"}]
     x = df[feat_cols].to_numpy(dtype=np.float32)
     return x, y, labels
@@ -68,7 +68,7 @@ def main() -> None:
     x, y, labels = load_dataset(args.data)
     booster = train_model(x, y, len(labels))
 
-    proba = booster.predict(x)
+    proba = np.asarray(booster.predict(x))
     metrics = {
         "top1_acc": float(top_k_accuracy_score(y, proba, k=1, labels=range(len(labels)))),
         "top5_acc": float(top_k_accuracy_score(y, proba, k=5, labels=range(len(labels)))),
