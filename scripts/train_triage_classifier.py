@@ -203,8 +203,8 @@ def main() -> None:
         callbacks=[lgb.early_stopping(30), lgb.log_evaluation(0)],
     )
 
-    val_preds = np.argmax(model.predict(x_val), axis=1)
-    train_preds = np.argmax(model.predict(x_train), axis=1)
+    val_preds = np.asarray(model.predict(x_val)).argmax(axis=1)
+    train_preds = np.asarray(model.predict(x_train)).argmax(axis=1)
     train_acc = float(np.mean(train_preds == y_train))
     val_acc = float(np.mean(val_preds == y_val))
     print(f"\nTrain accuracy: {train_acc:.3f}")
