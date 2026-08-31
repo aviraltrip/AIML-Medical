@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from enum import StrEnum
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class SeverityTier(StrEnum):
+class SeverityTier(str, Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
@@ -13,7 +13,7 @@ class SeverityTier(StrEnum):
     EMERGENCY = "EMERGENCY"
 
 
-class Gender(StrEnum):
+class Gender(str, Enum):
     MALE = "male"
     FEMALE = "female"
     OTHER = "other"
