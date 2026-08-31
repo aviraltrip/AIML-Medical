@@ -4,15 +4,26 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from tests.test_chronic_refactor import (
-    test_adherence_classifier,
-    test_api_endpoints_contract,
-    test_chronic_risk_evaluation,
-    test_fuzzy_ocr_lab_parser,
-    test_hypertension_staging,
-    test_idrs_calculations,
-    test_parameter_inferences,
-)
+try:
+    from tests.test_chronic_refactor import (
+        test_adherence_classifier,
+        test_api_endpoints_contract,
+        test_chronic_risk_evaluation,
+        test_fuzzy_ocr_lab_parser,
+        test_hypertension_staging,
+        test_idrs_calculations,
+        test_parameter_inferences,
+    )
+except ImportError:
+    from test_chronic_refactor import (  # type: ignore[import-not-found]
+        test_adherence_classifier,
+        test_api_endpoints_contract,
+        test_chronic_risk_evaluation,
+        test_fuzzy_ocr_lab_parser,
+        test_hypertension_staging,
+        test_idrs_calculations,
+        test_parameter_inferences,
+    )
 
 if __name__ == "__main__":
     print("Starting PulsePoint Chronic Refactor Unit Tests...")
