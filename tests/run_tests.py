@@ -1,29 +1,24 @@
 import os
 import sys
 
+import importlib
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 try:
-    from tests.test_chronic_refactor import (
-        test_adherence_classifier,
-        test_api_endpoints_contract,
-        test_chronic_risk_evaluation,
-        test_fuzzy_ocr_lab_parser,
-        test_hypertension_staging,
-        test_idrs_calculations,
-        test_parameter_inferences,
-    )
+    _chronic_test_mod = importlib.import_module("tests.test_chronic_refactor")
 except ImportError:
-    from test_chronic_refactor import (  # type: ignore[import-not-found]
-        test_adherence_classifier,
-        test_api_endpoints_contract,
-        test_chronic_risk_evaluation,
-        test_fuzzy_ocr_lab_parser,
-        test_hypertension_staging,
-        test_idrs_calculations,
-        test_parameter_inferences,
-    )
+    _chronic_test_mod = importlib.import_module("test_chronic_refactor")
+
+test_idrs_calculations = _chronic_test_mod.test_idrs_calculations
+test_parameter_inferences = _chronic_test_mod.test_parameter_inferences
+test_hypertension_staging = _chronic_test_mod.test_hypertension_staging
+test_chronic_risk_evaluation = _chronic_test_mod.test_chronic_risk_evaluation
+test_fuzzy_ocr_lab_parser = _chronic_test_mod.test_fuzzy_ocr_lab_parser
+test_adherence_classifier = _chronic_test_mod.test_adherence_classifier
+test_api_endpoints_contract = _chronic_test_mod.test_api_endpoints_contract
 
 if __name__ == "__main__":
     print("Starting PulsePoint Chronic Refactor Unit Tests...")
