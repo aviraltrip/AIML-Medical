@@ -11,6 +11,7 @@ from pathlib import Path
 
 import lightgbm as lgb
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 from sklearn.metrics import top_k_accuracy_score
 from sklearn.model_selection import train_test_split
@@ -18,7 +19,7 @@ from sklearn.model_selection import train_test_split
 from pulsepoint_ai.engines.triage.classifier.features import feature_names
 
 
-def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray, list[str]]:  # type: ignore[type-arg]
+def load_dataset(path: Path) -> tuple[NDArray[np.float32], NDArray[np.int64], list[str]]:
     df = pd.read_parquet(path)
     labels = [str(lbl) for lbl in sorted(df["icd10"].unique())]
     label_map = {label: i for i, label in enumerate(labels)}
@@ -29,8 +30,8 @@ def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray, list[str]]:  # typ
 
 
 def train_model(
-    x: np.ndarray,  # type: ignore[type-arg]
-    y: np.ndarray,  # type: ignore[type-arg]
+    x: NDArray[np.float32],
+    y: NDArray[np.int64],
     n_classes: int,
 ) -> lgb.Booster:
     params = {
