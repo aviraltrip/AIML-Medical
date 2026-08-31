@@ -70,7 +70,7 @@ def main() -> None:
     x, y, labels = load_dataset(args.data)
     booster = train_model(x, y, len(labels))
 
-    proba = np.asarray(booster.predict(x))
+    proba: Any = booster.predict(x)
     metrics = {
         "top1_acc": top_k_accuracy_score(y, proba, k=1, labels=range(len(labels))),
         "top5_acc": top_k_accuracy_score(y, proba, k=5, labels=range(len(labels))),
