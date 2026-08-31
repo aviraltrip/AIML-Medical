@@ -93,3 +93,8 @@ omit = ["*/scripts/*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "."]
+
+[tool.pyright]
+include = ["src", "tests", "scripts"]
+extraPaths = ["src", "."]
+pythonVersion = "3.10"
