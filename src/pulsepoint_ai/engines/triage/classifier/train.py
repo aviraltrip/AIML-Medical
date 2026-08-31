@@ -27,7 +27,7 @@ SEVERITY_LABELS = ["LOW", "MEDIUM", "HIGH", "URGENT", "EMERGENCY"]
 def load_dataset(path: Path) -> tuple[np.ndarray, np.ndarray]:  # type: ignore[type-arg]
     df = pd.read_parquet(path)
     label_map = {label: i for i, label in enumerate(SEVERITY_LABELS)}
-    y = df["severity"].map(label_map).to_numpy()
+    y = df["severity"].map(label_map).to_numpy(dtype=np.int64)
     feat_cols = [c for c in df.columns if c != "severity"]
     x = df[feat_cols].to_numpy(dtype=np.float32)
     return x, y
@@ -74,8 +74,8 @@ def train(
     final = lgb.train(params, d_full, num_boost_round=500)
 
     metrics = {
-        "cv_macro_f1_mean": float(np.mean(fold_f1s)),
-        "cv_macro_f1_std": float(np.std(fold_f1s)),
+        "cv_macro_f1_mean": float(np.mean(np.asarray(fold_f1s, dtype=np.float64))) if fold_f1s else 0.0,
+        "cv_macro_f1_std": float(np.std(np.asarray(fold_f1s, dtype=np.float64))) if fold_f1s else 0.0,
         "n_samples": len(y),
         "n_features": x.shape[1],
         "label_distribution": {
