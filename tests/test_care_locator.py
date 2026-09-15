@@ -1,14 +1,13 @@
-import pytest
+from pulsepoint_ai.core.schemas.care import CareLocatorRequest
+from pulsepoint_ai.core.schemas.common import SeverityTier
 from pulsepoint_ai.engines.connect.care_locator import (
     find_care,
     haversine_km,
     map_icd10_to_specialties,
 )
-from pulsepoint_ai.core.schemas.care import CareLocatorRequest
-from pulsepoint_ai.core.schemas.common import SeverityTier
 
 
-def test_haversine_distance_calculation():
+def test_haversine_distance_calculation() -> None:
     # Distance between two identical coordinates must be 0
     d0 = haversine_km(12.9716, 77.5946, 12.9716, 77.5946)
     assert round(d0, 4) == 0.0
@@ -18,7 +17,7 @@ def test_haversine_distance_calculation():
     assert 120.0 <= d_mysore <= 160.0
 
 
-def test_map_icd10_to_specialties():
+def test_map_icd10_to_specialties() -> None:
     # E11 (Type 2 diabetes mellitus)
     specs = map_icd10_to_specialties(["E11.9"])
     assert len(specs) > 0
@@ -29,7 +28,7 @@ def test_map_icd10_to_specialties():
     assert len(default_specs) == 1
 
 
-def test_locate_care_contract():
+def test_locate_care_contract() -> None:
     req = CareLocatorRequest(
         patient_lat=12.9716,
         patient_lon=77.5946,

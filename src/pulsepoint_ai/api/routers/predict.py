@@ -24,7 +24,7 @@ router = APIRouter()
 llm_client = LLMClient()
 
 @router.post("/disease", response_model=DiseasePredictResponse)
-async def predict_disease(request: DiseasePredictRequest):
+async def predict_disease(request: DiseasePredictRequest) -> DiseasePredictResponse:
     """
     Predict top likely diseases (ICD-10) based on symptoms, age, and gender.
     """
@@ -44,7 +44,7 @@ async def predict_disease(request: DiseasePredictRequest):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/labs", response_model=LabAnalyzeResponse)
-async def analyze_labs(request: LabAnalyzeRequest):
+async def analyze_labs(request: LabAnalyzeRequest) -> LabAnalyzeResponse:
     """
     Detect lab results from OCR text and provide AI-powered explanations for abnormal values.
     """
@@ -75,7 +75,7 @@ async def analyze_labs(request: LabAnalyzeRequest):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/condition-card", response_model=ConditionCardResponse)
-async def get_condition_card(request: ConditionCardRequest):
+async def get_condition_card(request: ConditionCardRequest) -> ConditionCardResponse:
     """
     Generate a plain-English 'Condition Card' with summaries and action steps for an ICD-10 code.
     """
@@ -87,7 +87,7 @@ async def get_condition_card(request: ConditionCardRequest):
 
 
 @router.post("/symptoms-from-text", response_model=SymptomExtractionResponse)
-async def extract_symptoms_from_text(request: SymptomExtractionRequest):
+async def extract_symptoms_from_text(request: SymptomExtractionRequest) -> SymptomExtractionResponse:
     """
     Extract canonical symptom names from PDF/OCR/clinical-note text.
 

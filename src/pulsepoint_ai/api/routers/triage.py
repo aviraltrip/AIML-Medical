@@ -14,7 +14,7 @@ llm_client = LLMClient()
 retriever = Retriever()
 
 @router.post("/assess", response_model=TriageAssessResponse)
-async def assess_triage(request: TriageAssessRequest):
+async def assess_triage(request: TriageAssessRequest) -> TriageAssessResponse:
     """
     Perform a complete medical triage assessment using the 3-Engine pipeline.
     Includes vital rule evaluation, ML classification, and RAG-grounded LLM reasoning.
@@ -26,7 +26,7 @@ async def assess_triage(request: TriageAssessRequest):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/interview", response_model=InterviewerResponse)
-async def conduct_interview(request: InterviewerRequest):
+async def conduct_interview(request: InterviewerRequest) -> InterviewerResponse:
     """
     Generate the next clinical question based on the patient's symptoms and previous answers.
     Primary: Gemini via LLMClient. Fallbacks: FLAN-T5 LoRA adapter, then deterministic rules.

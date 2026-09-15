@@ -1,11 +1,13 @@
 """Translation Engine for doctor-patient communication (English -> Hindi/Marathi)."""
 from __future__ import annotations
 
+from typing import Any
+
 import httpx
 
 
 class TranslationEngine:
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_url = "https://translate.googleapis.com/translate_a/single"
 
     async def translate(self, text: str, target_lang: str = "kn") -> str:
@@ -37,7 +39,7 @@ class TranslationEngine:
 translator = TranslationEngine()
 
 
-async def translate_medical_text(text: str, target_language: str, *, llm=None) -> str:
+async def translate_medical_text(text: str, target_language: str, *, llm: Any = None) -> str:
     """Router-facing entry point. `llm` is accepted for API compatibility but unused
     (the Google Translate gtx proxy is sufficient and free for short medical strings).
     """

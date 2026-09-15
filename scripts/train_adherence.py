@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-def generate_synthetic_data(num_samples=5000):
+def generate_synthetic_data(num_samples: int = 5000) -> pd.DataFrame:
     np.random.seed(42)
 
 
@@ -58,7 +58,7 @@ def generate_synthetic_data(num_samples=5000):
 
     return df
 
-def main():
+def main() -> None:
     print("Generating synthetic rural adherence data...")
     df = generate_synthetic_data(5000)
 

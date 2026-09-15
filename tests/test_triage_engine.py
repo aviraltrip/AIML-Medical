@@ -1,14 +1,13 @@
-import pytest
 from pulsepoint_ai.core.schemas.common import Gender, PatientProfile, SeverityTier, Vitals
 from pulsepoint_ai.core.schemas.triage import TriageAssessRequest
+from pulsepoint_ai.engines.chronic_scoring import calculate_idrs
+from pulsepoint_ai.engines.triage.classifier.infer_adherence import predict as predict_adherence
 from pulsepoint_ai.engines.triage.pipeline import run_triage
 from pulsepoint_ai.engines.triage.rag.retriever import Retriever
 from pulsepoint_ai.llm.client import LLMClient
-from pulsepoint_ai.engines.triage.classifier.infer_adherence import adherence_classifier, predict as predict_adherence
-from pulsepoint_ai.engines.chronic_scoring import calculate_idrs, evaluate_chronic_risk
 
 
-def test_idrs_boundary_conditions():
+def test_idrs_boundary_conditions() -> None:
     # Female age 35, waist 85, moderate physical activity, no family history
     score, details = calculate_idrs(
         age=35,
@@ -23,7 +22,7 @@ def test_idrs_boundary_conditions():
     assert details["activity_score"] == 20
 
 
-def test_adherence_risk_scoring_bounds():
+def test_adherence_risk_scoring_bounds() -> None:
     # High risk profile: laborer, distance in symptoms, previous non-adherence
     high_risk_profile = PatientProfile(
         age=60,
@@ -45,10 +44,10 @@ def test_adherence_risk_scoring_bounds():
     assert 0.0 <= prob_low <= 1.0
 
 
-def test_full_triage_pipeline_execution():
+def test_full_triage_pipeline_execution() -> None:
     import asyncio
 
-    async def _test():
+    async def _test() -> None:
         req = TriageAssessRequest(
             patient_id="patient-unit-test-01",
             symptoms=["frequent urination", "excessive thirst", "fatigue"],

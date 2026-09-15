@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import numpy as np
@@ -19,7 +20,7 @@ from pulsepoint_ai.engines.predict.lab_detector import detect_labs
 client = TestClient(app)
 
 
-def test_idrs_calculations():
+def test_idrs_calculations() -> None:
 
 
 
@@ -55,7 +56,7 @@ def test_idrs_calculations():
     assert score2 == 0
 
 
-def test_parameter_inferences():
+def test_parameter_inferences() -> None:
 
     symptoms = ["frequent urination", "sedentary lifestyle"]
     known_conditions = ["obesity"]
@@ -74,7 +75,7 @@ def test_parameter_inferences():
     assert infer_waist_circumference(symptoms4, Gender.FEMALE) == 95.0
 
 
-def test_hypertension_staging():
+def test_hypertension_staging() -> None:
 
     vitals = Vitals(bp_systolic=115, bp_diastolic=75)
     profile = PatientProfile(age=30, gender=Gender.MALE)
@@ -102,7 +103,7 @@ def test_hypertension_staging():
     assert not details["vitals_present"]
 
 
-def test_chronic_risk_evaluation():
+def test_chronic_risk_evaluation() -> None:
     profile = PatientProfile(age=55, gender=Gender.MALE)
     vitals = Vitals(bp_systolic=165, bp_diastolic=105, blood_sugar_mg_dl=135)
     symptoms = ["fatigue", "polyuria", "family history of diabetes"]
@@ -123,7 +124,7 @@ def test_chronic_risk_evaluation():
     assert "mild_elevated_risk" in results_partial["rules_fired"]
 
 
-def test_fuzzy_ocr_lab_parser():
+def test_fuzzy_ocr_lab_parser() -> None:
 
     ocr_text = """
     Patient Report
@@ -161,8 +162,7 @@ def test_fuzzy_ocr_lab_parser():
             assert f.status == LabStatus.HIGH
 
 
-def test_adherence_classifier():
-    from pulsepoint_ai.core.schemas.common import SeverityTier
+def test_adherence_classifier() -> None:
     from pulsepoint_ai.engines.triage.classifier.infer_adherence import AdherenceClassifier
 
     clf = AdherenceClassifier()
@@ -188,8 +188,8 @@ def test_adherence_classifier():
     assert 0.0 <= prob <= 1.0
 
 
-def test_api_endpoints_contract():
-    async def mock_complete_json(prompt, prompt_version="v1"):
+def test_api_endpoints_contract() -> None:
+    async def mock_complete_json(prompt: str, prompt_version: str = "v1") -> dict[str, Any]:
         if "reasoner_v1" in prompt_version or "reasoner" in prompt:
             return {
                 "severity": "URGENT",
@@ -217,7 +217,7 @@ def test_api_endpoints_contract():
                 "expected_answer_type": "yes_no"
             }
 
-    async def mock_embed_one(text):
+    async def mock_embed_one(text: str) -> np.ndarray[Any, Any]:
         return np.zeros(3072, dtype=np.float32)
 
     with patch("pulsepoint_ai.llm.client.LLMClient.complete_json", new_callable=AsyncMock) as mock_complete, \

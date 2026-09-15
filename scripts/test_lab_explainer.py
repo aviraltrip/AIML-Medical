@@ -8,12 +8,12 @@ from pulsepoint_ai.core.schemas.common import Gender
 from pulsepoint_ai.llm.client import LLMClient
 
 
-async def main():
-    print("🚀 Testing PulsePoint AI Lab Explainer...")
+async def main() -> None:
+    print("[*] Testing PulsePoint AI Lab Explainer...")
 
 
     if not os.getenv("GOOGLE_API_KEY") and not os.getenv("OPENAI_API_KEY"):
-        print("⚠️ Warning: No API keys found in environment. Please set GOOGLE_API_KEY for Gemini.")
+        print("[!] Warning: No API keys found in environment. Please set GOOGLE_API_KEY for Gemini.")
 
 
     sample_ocr = """

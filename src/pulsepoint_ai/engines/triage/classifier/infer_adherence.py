@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+from typing import Any
 
 import lightgbm as lgb
 import numpy as np
@@ -15,10 +16,10 @@ class AdherenceClassifier:
     def __init__(self) -> None:
         self.settings = get_settings()
         self.model_dir = self.settings.models_dir / "adherence_lgbm"
-        self._model = None
-        self._feature_names = None
+        self._model: lgb.Booster | None = None
+        self._feature_names: list[str] | None = None
 
-    def _load(self):
+    def _load(self) -> None:
         if self._model:
             return
 
@@ -159,7 +160,7 @@ def predict(
 
 
 def score_adherence_risk(
-    patient: dict | PatientProfile,
+    patient: dict[str, Any] | PatientProfile,
     symptoms: list[str] | None = None,
     severity_tier: SeverityTier = SeverityTier.LOW
 ) -> float:

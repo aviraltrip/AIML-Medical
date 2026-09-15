@@ -1,8 +1,10 @@
+from typing import Any
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from pulsepoint_ai.core.logging import get_logger
 from pulsepoint_ai.api.routers import connect, predict, triage
+from pulsepoint_ai.core.logging import get_logger
 
 logger = get_logger("pulsepoint_ai.api")
 
@@ -27,7 +29,7 @@ app.include_router(predict.router, prefix="/api/v1/predict", tags=["Predict"])
 app.include_router(connect.router, prefix="/api/v1/connect", tags=["Connect"])
 
 @app.get("/")
-async def health_check():
+async def health_check() -> dict[str, Any]:
     return {
         "status": "healthy",
         "service": "pulsepoint-ai",

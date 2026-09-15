@@ -27,13 +27,13 @@ class SymptomInterviewer:
         self.cfg = get_models_config()["interviewer"]
         self.settings = get_settings()
         self.device = device
-        self._model = None
-        self._tokenizer = None
+        self._model: Any = None
+        self._tokenizer: Any = None
         self._load_attempted = False
         self._load_failed_reason: str | None = None
         self._lock = threading.Lock()
 
-    def _load_model(self):
+    def _load_model(self) -> None:
         """Loads the FLAN-T5 model with LoRA adapters. Idempotent + thread-safe."""
         if self._model is not None or self._load_attempted:
             return

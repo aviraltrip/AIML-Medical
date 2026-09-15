@@ -13,6 +13,7 @@ import asyncio
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
 
 import httpx
 import numpy as np
@@ -60,7 +61,7 @@ async def ingest_all() -> None:
     KB_DIR.mkdir(parents=True, exist_ok=True)
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    all_chunks: list[dict] = []
+    all_chunks: list[dict[str, Any]] = []
 
 
     for src in sources:

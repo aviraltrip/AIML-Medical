@@ -20,7 +20,7 @@ class TranslationRequest(BaseModel):
     target_language: str
 
 @router.post("/summarize")
-async def summarize_case(request: MedReachRequest):
+async def summarize_case(request: MedReachRequest) -> dict[str, Any]:
     """
     Generate a clinical summary for a doctor handover based on patient data and triage history.
     """
@@ -38,7 +38,7 @@ async def summarize_case(request: MedReachRequest):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/translate")
-async def translate_text(request: TranslationRequest):
+async def translate_text(request: TranslationRequest) -> dict[str, Any]:
     """
     Translate medical text into a target language (e.g., 'hi' for Hindi, 'ta' for Tamil).
     """
@@ -58,7 +58,7 @@ async def translate_text(request: TranslationRequest):
 
 
 @router.post("/care-locator", response_model=CareLocatorResponse)
-async def find_nearby_care(request: CareLocatorRequest):
+async def find_nearby_care(request: CareLocatorRequest) -> CareLocatorResponse:
     """
     HyperLocal Care Matching.
 
