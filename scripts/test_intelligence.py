@@ -4,12 +4,12 @@ import sys
 
 sys.path.append(os.path.join(os.getcwd(), "src"))
 
-from pulsepoint_ai.engines.triage.classifier.infer_adherence import score_adherence_risk
 from pulsepoint_ai.core.schemas.common import SeverityTier
 from pulsepoint_ai.engines.connect.translation import translator
+from pulsepoint_ai.engines.triage.classifier.infer_adherence import score_adherence_risk
 
 
-async def run_intelligence_test():
+async def run_intelligence_test() -> None:
     print("="*50)
     print("PULSEPOINT INTELLIGENCE TEST")
     print("="*50)

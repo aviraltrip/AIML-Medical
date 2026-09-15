@@ -9,7 +9,7 @@ from pulsepoint_ai.engines.triage.reasoner import reason
 from pulsepoint_ai.llm.client import LLMClient
 
 
-async def test_rag_reasoner():
+async def test_rag_reasoner() -> None:
     print("="*50)
     print("PULSEPOINT RAG REASONER TEST")
     print("="*50)

@@ -7,7 +7,7 @@ sys.path.append(os.path.join(os.getcwd(), "src"))
 from pulsepoint_ai.engines.triage.rag.ingest import ingest_all
 
 
-async def main():
+async def main() -> None:
     try:
         print("Starting Clinical Knowledge Base Indexing...")
         await ingest_all()
